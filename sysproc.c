@@ -13,7 +13,7 @@ int sys_create_container(void){
   int id;
   argint(0, &id);
   if(containers[id] == 1){
-    printf(1, "This is id is already created");
+    cprintf("This is id is already created");
   }
   else{
     containers[id] = 1;
@@ -25,7 +25,7 @@ int sys_destroy_container(void){
   int id;
   argint(0, &id);
   if(containers[id] == 0){
-    printf(1, "This is id is already non-existant");
+    cprintf("This is id is already non-existant");
   }
   else{
     containers[id] = 0;
@@ -38,7 +38,7 @@ int sys_join_container(void){
   argint(0, &id);
   //Join this process in container ID
   if(containers[id] == 0){
-    printf(1, "This container doesn't exists");
+    cprintf("This container doesn't exists");
     return 0;
   }
   myproc()->containerID = id;
@@ -54,6 +54,12 @@ int sys_leave_container(void){
   return 0;
 }
 
+int sys_ps(void){
+  int procID = myproc()->pid;
+  int containerID = myproc()->containerID;
+  psHelper(procID, containerID);
+  return 0;
+}
 
 // SYS_calls which were implemented from before
 int

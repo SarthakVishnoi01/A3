@@ -20,6 +20,20 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+// My functions
+void psHelper(int procID, int containerID){
+  struct proc *p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p-containerID == containerID){
+      if(p->state == RUNNING || p->state == WAITING){
+        cprintf("pid:%d name:%s\n", p->pid, p->name);
+      }
+    }
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
 void
 pinit(void)
 {
