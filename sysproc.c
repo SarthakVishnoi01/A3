@@ -6,7 +6,56 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "container_scheduler.h"
 
+//Sys_calls which I will implement
+int sys_create_container(void){
+  int id;
+  argint(0, &id);
+  if(containers[id] == 1){
+    printf(1, "This is id is already created");
+  }
+  else{
+    containers[id] = 1;
+  }
+  return 0;
+}
+
+int sys_destroy_container(void){
+  int id;
+  argint(0, &id);
+  if(containers[id] == 0){
+    printf(1, "This is id is already non-existant");
+  }
+  else{
+    containers[id] = 0;
+  }
+  return 0;
+}
+
+int sys_join_container(void){
+  int id;
+  argint(0, &id);
+  //Join this process in container ID
+  if(containers[id] == 0){
+    printf(1, "This container doesn't exists");
+    return 0;
+  }
+  myproc()->containerID = id;
+  //Add this process in this container
+  addProcessToContainer(myproc()->pid, id);
+  return 0;
+}
+
+int sys_leave_container(void){
+  int pid = myproc()->pid;
+  int containerID = myproc()->containerID;
+  removeProcessFromContainer(pid, containerID);
+  return 0;
+}
+
+
+// SYS_calls which were implemented from before
 int
 sys_fork(void)
 {

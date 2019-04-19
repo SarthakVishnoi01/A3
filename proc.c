@@ -38,10 +38,10 @@ struct cpu*
 mycpu(void)
 {
   int apicid, i;
-  
+
   if(readeflags()&FL_IF)
     panic("mycpu called with interrupts enabled\n");
-  
+
   apicid = lapicid();
   // APIC IDs are not guaranteed to be contiguous. Maybe we should have
   // a reverse map, or reserve a register to store &cpus[i].
@@ -124,7 +124,7 @@ userinit(void)
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
   p = allocproc();
-  
+
   initproc = p;
   if((p->pgdir = setupkvm()) == 0)
     panic("userinit: out of memory?");
@@ -151,11 +151,6 @@ userinit(void)
   p->state = RUNNABLE;
 
   release(&ptable.lock);
-  acquire(&(p->container.lock));
-
-  p->mere container me mai kha hu, wha pr mujhe waiting kro
-
-  release(&(p->container.lock));
 }
 
 // Grow current process's memory by n bytes.
@@ -222,13 +217,6 @@ fork(void)
   np->state = RUNNABLE;
 
   release(&ptable.lock);
-
-  acquire(&(p->container.lock));
-
-  p->mere container me mai kha hu, wha pr mujhe waiting kro
-
-  release(&(p->container.lock));
-
   return pid;
 }
 
@@ -286,7 +274,7 @@ wait(void)
   struct proc *p;
   int havekids, pid;
   struct proc *curproc = myproc();
-  
+
   acquire(&ptable.lock);
   for(;;){
     // Scan through table looking for exited children.
@@ -336,20 +324,16 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  
+
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
     // Loop over process table looking for process to run.
-    acquire(&ptable.lock);acquire(&(p->container.lock));
+    acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
-    
-      if(p->container->c_state!=READY)
-        continue;
-      
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
@@ -365,8 +349,7 @@ scheduler(void)
       // It should have changed its p->state before coming back.
       c->proc = 0;
     }
-    release(&ptable.lock);release(&(p->container.lock));
-
+    release(&ptable.lock);
   }
 }
 
@@ -400,12 +383,6 @@ sched(void)
 void
 yield(void)
 {
-  acquire(&(p->container.lock));
-
-  p->mere container me mai kha hu, wha pr mujhe waiting kro
-
-  release(&(p->container.lock));
-
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
   sched();
@@ -439,7 +416,7 @@ void
 sleep(void *chan, struct spinlock *lk)
 {
   struct proc *p = myproc();
-  
+
   if(p == 0)
     panic("sleep");
 
@@ -483,11 +460,6 @@ wakeup1(void *chan)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == SLEEPING && p->chan == chan){
       p->state = RUNNABLE;
-      acquire(&(p->container.lock));
-
-      p->mere container me mai kha hu, wha pr mujhe waiting kro
-
-      release(&(p->container.lock));
     }
 }
 
@@ -515,9 +487,6 @@ kill(int pid)
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING){
         p->state = RUNNABLE;
-        acquire(&(p->container.lock));
-        p->mere container me mai kha hu, wha pr mujhe waiting kro
-        release(&(p->container.lock));
       }
 
       release(&ptable.lock);

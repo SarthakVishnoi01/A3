@@ -1,22 +1,25 @@
-struct proc_cont {
+#include "types.h"
+#include "defs.h"
+#include "param.h"
+#include "memlayout.h"
+#include "mmu.h"
+#include "x86.h"
+#include "container_scheduler.h"
+#include "spinlock.h"
 
-
-}
+//Assume this has access to ctable
 
 struct {
   struct spinlock lock;
-  struct cont proc_cont[NPROC_CONT];
-  int cid;
-} container;
+  struct container container[NCONT];
+} ctable;
 
-
-enum c_state{RUNNING,READY,WAITING}
 void container_scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  
+
   for(;;){
     // Loop over process table looking for process to run.
     acquire(&ptable_container.lock);
@@ -32,6 +35,27 @@ void container_scheduler(void)
       c->proc = 0;
     }
     release(&ptable_container.lock);
+  }
+}
 
+void addProcessToContainer(int pid, int containerID){
+  struct container *con;
+  for(con = ctable.container; c < &ctable.container[NCONT]; con++){
+    if(con->containerID == containerID){
+      //This is the container ID, add this process
+      con->presentProc[pid] = 1; // Added the process
+      break;
+    }
+  }
+}
+
+void removeProcessFromContainer(int pid, int containerID){
+  struct container *con;
+  for(con = ctable.container; c < &ctable.container[NCONT]; con++){
+    if(con->containerID == containerID){
+      //This is the container ID, remove this process
+      con->presentProc[pid] = 0; // Remove the process
+      break;
+    }
   }
 }
