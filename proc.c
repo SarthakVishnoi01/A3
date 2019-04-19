@@ -151,6 +151,11 @@ userinit(void)
   p->state = RUNNABLE;
 
   release(&ptable.lock);
+  acquire(&(p->container.lock));
+
+  p->mere container me mai kha hu, wha pr mujhe waiting kro
+
+  release(&(p->container.lock));
 }
 
 // Grow current process's memory by n bytes.
@@ -217,6 +222,12 @@ fork(void)
   np->state = RUNNABLE;
 
   release(&ptable.lock);
+
+  acquire(&(p->container.lock));
+
+  p->mere container me mai kha hu, wha pr mujhe waiting kro
+
+  release(&(p->container.lock));
 
   return pid;
 }
@@ -331,17 +342,21 @@ scheduler(void)
     sti();
 
     // Loop over process table looking for process to run.
-    acquire(&ptable.lock);
+    acquire(&ptable.lock);acquire(&(p->container.lock));
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
-
+    
+      if(p->container->c_state!=READY)
+        continue;
+      
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+      p->container->c_state=RUNNING;
 
       swtch(&(c->scheduler), p->context);
       switchkvm();
@@ -350,7 +365,7 @@ scheduler(void)
       // It should have changed its p->state before coming back.
       c->proc = 0;
     }
-    release(&ptable.lock);
+    release(&ptable.lock);release(&(p->container.lock));
 
   }
 }
@@ -385,6 +400,12 @@ sched(void)
 void
 yield(void)
 {
+  acquire(&(p->container.lock));
+
+  p->mere container me mai kha hu, wha pr mujhe waiting kro
+
+  release(&(p->container.lock));
+
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
   sched();
@@ -460,8 +481,14 @@ wakeup1(void *chan)
   struct proc *p;
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan)
+    if(p->state == SLEEPING && p->chan == chan){
       p->state = RUNNABLE;
+      acquire(&(p->container.lock));
+
+      p->mere container me mai kha hu, wha pr mujhe waiting kro
+
+      release(&(p->container.lock));
+    }
 }
 
 // Wake up all processes sleeping on chan.
@@ -486,8 +513,13 @@ kill(int pid)
     if(p->pid == pid){
       p->killed = 1;
       // Wake process from sleep if necessary.
-      if(p->state == SLEEPING)
+      if(p->state == SLEEPING){
         p->state = RUNNABLE;
+        acquire(&(p->container.lock));
+        p->mere container me mai kha hu, wha pr mujhe waiting kro
+        release(&(p->container.lock));
+      }
+
       release(&ptable.lock);
       return 0;
     }
