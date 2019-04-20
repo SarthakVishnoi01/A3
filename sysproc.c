@@ -13,10 +13,11 @@ int sys_create_container(void){
   int id;
   argint(0, &id);
   if(containers[id] == 1){
-    cprintf("This is id is already created");
+    cprintf("This is id is already created\n");
   }
   else{
     containers[id] = 1;
+    cprintf("Container created successfully\n");
   }
   return 0;
 }
@@ -25,7 +26,7 @@ int sys_destroy_container(void){
   int id;
   argint(0, &id);
   if(containers[id] == 0){
-    cprintf("This is id is already non-existant");
+    cprintf("This is id is already non-existant\n");
   }
   else{
     containers[id] = 0;

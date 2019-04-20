@@ -23,7 +23,7 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-int create_container(void);
+int create_container(int);
 int leave_container(int);
 int destroy_container(int);
 int join_container(int);

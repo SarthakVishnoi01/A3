@@ -24,8 +24,8 @@ static void wakeup1(void *chan);
 void psHelper(int procID, int containerID){
   struct proc *p;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p-containerID == containerID){
-      if(p->state == RUNNING || p->state == WAITING){
+    if(p->containerID == containerID){
+      if(p->state == RUNNING || p->state == RUNNABLE){
         cprintf("pid:%d name:%s\n", p->pid, p->name);
       }
     }
@@ -354,7 +354,7 @@ scheduler(void)
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
-      p->container->c_state=RUNNING;
+      // p->container->c_state=RUNNING;
 
       swtch(&(c->scheduler), p->context);
       switchkvm();

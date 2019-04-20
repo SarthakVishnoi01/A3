@@ -12,7 +12,7 @@ struct superblock;
 struct container;
 
 
-extern containers[];  //1 means this container is initialised 0 means it isn't
+extern int containers[];  //1 means this container is initialised 0 means it isn't
 
 // bio.c
 void            binit(void);
@@ -193,7 +193,7 @@ void            clearpteu(pde_t *pgdir, char *uva);
 
 //  contanier_scheduler.c
 void addProcessToContainer(int pid, int containerID);
-void removeProcessFromContainer(int pid, int containerID)
+void removeProcessFromContainer(int pid, int containerID);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

@@ -24,4 +24,4 @@
 #define SYS_join_container    23
 #define SYS_leave_container   24
 #define SYS_destroy_container 25
-#define sys_ps                26
+#define SYS_ps                26

@@ -14,33 +14,33 @@ struct {
   struct container container[NCONT];
 } ctable;
 
-void container_scheduler(void)
-{
-  struct proc *p;
-  struct cpu *c = mycpu();
-  c->proc = 0;
-
-  for(;;){
-    // Loop over process table looking for process to run.
-    acquire(&ptable_container.lock);
-    for(p = ptable_container.proc; p < &ptable_container.proc[NPROC_conctainer]; p++){
-      if(p->state != WAITING)
-        continue;
-
-      c->proc = p;
-      p->state = READY;
-
-      while(p->state != WAITING){};
-
-      c->proc = 0;
-    }
-    release(&ptable_container.lock);
-  }
-}
+// void container_scheduler(void)
+// {
+//   struct proc *p;
+//   struct cpu *c = mycpu();
+//   c->proc = 0;
+//
+//   for(;;){
+//     // Loop over process table looking for process to run.
+//     acquire(&ptable_container.lock);
+//     for(p = ptable_container.proc; p < &ptable_container.proc[NPROC_conctainer]; p++){
+//       if(p->state != WAITING)
+//         continue;
+//
+//       c->proc = p;
+//       p->state = READY;
+//
+//       while(p->state != WAITING){};
+//
+//       c->proc = 0;
+//     }
+//     release(&ptable_container.lock);
+//   }
+// }
 
 void addProcessToContainer(int pid, int containerID){
   struct container *con;
-  for(con = ctable.container; c < &ctable.container[NCONT]; con++){
+  for(con = ctable.container; con < &ctable.container[NCONT]; con++){
     if(con->containerID == containerID){
       //This is the container ID, add this process
       con->presentProc[pid] = 1; // Added the process
@@ -51,7 +51,7 @@ void addProcessToContainer(int pid, int containerID){
 
 void removeProcessFromContainer(int pid, int containerID){
   struct container *con;
-  for(con = ctable.container; c < &ctable.container[NCONT]; con++){
+  for(con = ctable.container; con < &ctable.container[NCONT]; con++){
     if(con->containerID == containerID){
       //This is the container ID, remove this process
       con->presentProc[pid] = 0; // Remove the process

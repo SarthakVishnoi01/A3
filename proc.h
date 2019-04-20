@@ -43,7 +43,6 @@ struct proc {
   int pid;                     // Process ID
   struct proc *parent;         // Parent process
   int containerID;             // ID of the container this process is present is in (Should be initially set to 0)
-  int containerID;             // Id of the container
   struct trapframe *tf;        // Trap frame for current syscall
   struct context *context;     // swtch() here to run process
   void *chan;                  // If non-zero, sleeping on chan
