@@ -174,6 +174,7 @@ userinit(void)
   acquire(&ptable.lock);
 
   p->state = RUNNABLE;
+  p->containerID = 0;
 
   release(&ptable.lock);
 }
@@ -240,6 +241,7 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
+  np->containerID = 0;
 
   release(&ptable.lock);
   return pid;

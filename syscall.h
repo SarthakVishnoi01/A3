@@ -25,3 +25,4 @@
 #define SYS_leave_container   24
 #define SYS_destroy_container 25
 #define SYS_ps                26
+#define SYS_list_containers   27
