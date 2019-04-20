@@ -6,13 +6,23 @@
 #include "x86.h"
 #include "container_scheduler.h"
 #include "spinlock.h"
+#include "proc.h"
 
 //Assume this has access to ctable
-
-struct {
+struct ctable {
   struct spinlock lock;
   struct container container[NCONT];
-} ctable;
+};
+
+struct ptable {
+  struct spinlock lock;
+  struct proc proc[NPROC];
+};
+
+
+struct ctable ctable;
+struct ptable ptable;
+
 
 // void container_scheduler(void)
 // {

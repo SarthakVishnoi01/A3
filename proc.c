@@ -5,12 +5,23 @@
 #include "mmu.h"
 #include "x86.h"
 #include "proc.h"
+#include "container_scheduler.h"
 #include "spinlock.h"
 
-struct {
+
+struct ctable {
+  struct spinlock lock;
+  struct container container[NCONT];
+};
+
+struct ptable {
   struct spinlock lock;
   struct proc proc[NPROC];
-} ptable;
+};
+
+
+struct ctable ctable;
+struct ptable ptable;
 
 static struct proc *initproc;
 
@@ -335,6 +346,7 @@ wait(void)
 void
 scheduler(void)
 {
+  struct container* cont;
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
@@ -344,8 +356,7 @@ scheduler(void)
     sti();
 
     // Loop over process table looking for process to run.
-    acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    for(p = ctable.container; p < &ctable.container[NCONT]; p++){
       if(p->state != RUNNABLE)
         continue;
       // Switch to chosen process.  It is the process's job
