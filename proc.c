@@ -184,14 +184,16 @@ userinit(void)
   // run this process. the acquire forces the above
   // writes to be visible, and the lock is also needed
   // because the assignment might not be atomic.
-  acquire(&ptable.lock);
 
+  acquire(&ptable.lock);
   p->state = RUNNABLE;
   p->containerID = 0;
-  ctable->container[0]->presentProc[p->pid] =1;
-
-
   release(&ptable.lock);
+
+  acquire(&ctable.lock);
+  ctable->container[0]->presentProc[p->pid] =1;
+  release(&ctable.lock);
+
 }
 
 // Grow current process's memory by n bytes.
@@ -254,12 +256,14 @@ fork(void)
   pid = np->pid;
 
   acquire(&ptable.lock);
-
   np->state = RUNNABLE;
   np->containerID = 0;
-  ctable->container[0]->presentProc[p->pid] =1;
-
   release(&ptable.lock);
+
+  acquire(&ctable.lock);
+  ctable->container[0]->presentProc[p->pid] =1;
+  release(&ctable.lock);
+
   return pid;
 }
 
@@ -362,9 +366,9 @@ wait(void)
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
 
-const char* getName(enum containerState s) 
+const char* getName(enum containerState s)
 {
-   switch (s) 
+   switch (s)
    {
       case CRUNNING: return "CRUNNING";
       case CWAITING: return "CWAITING";
@@ -381,7 +385,6 @@ scheduler(void)
   struct cpu *c = mycpu();
   c->proc = 0;
 
-
   for(;;){
     // Enable interrupts on this processor.
     sti();
@@ -389,7 +392,6 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      ps();
       if(p->state != RUNNABLE)
         continue;
 
@@ -410,8 +412,6 @@ scheduler(void)
     release(&ptable.lock);
 
   }
-  //release(&ctable.lock);
-
 }
 
 // Enter scheduler.  Must hold only ptable.lock

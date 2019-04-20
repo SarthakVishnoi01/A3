@@ -18,7 +18,7 @@ void addProcessToContainer(int pid, int containerID);
 void removeProcessFromContainer(int pid, int containerID);
 void listContainersHelper(void);
 void containerInit(void);
-void createContainer(int);
+int  createContainer(void);
 void destroyContainer(int);
 // bio.c
 void            binit(void);
