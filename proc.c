@@ -188,6 +188,8 @@ userinit(void)
 
   p->state = RUNNABLE;
   p->containerID = 0;
+  ctable->container[0]->presentProc[p->pid] =1;
+
 
   release(&ptable.lock);
 }
@@ -255,6 +257,7 @@ fork(void)
 
   np->state = RUNNABLE;
   np->containerID = 0;
+  ctable->container[0]->presentProc[p->pid] =1;
 
   release(&ptable.lock);
   return pid;
@@ -386,6 +389,7 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      ps();
       if(p->state != RUNNABLE)
         continue;
 
@@ -406,8 +410,7 @@ scheduler(void)
     release(&ptable.lock);
 
   }
-  release(&ctable.lock);
-  while(1){};
+  //release(&ctable.lock);
 
 }
 
