@@ -38,6 +38,24 @@ struct {
 //   }
 // }
 
+void containerInit(void){
+  struct container *con;
+  for(int i=0; i<NCONT; i++){
+    con = &ctable.container[i];
+    con->id = i;
+    con->state = CUNUSED;
+    for(int j=0; j<NPROC; j++){
+      con->presentProc[j] = 0;
+    }
+  }
+}
+
+void createContainer(int id){
+  struct container *con;
+  con = &ctable.container[id];
+  con->state = CWAITING;
+}
+
 void addProcessToContainer(int pid, int containerID){
   struct container *con;
   for(con = ctable.container; con < &ctable.container[NCONT]; con++){
@@ -56,6 +74,17 @@ void removeProcessFromContainer(int pid, int containerID){
       //This is the container ID, remove this process
       con->presentProc[pid] = 0; // Remove the process
       break;
+    }
+  }
+}
+
+void listContainersHelper(void){
+  struct container *c;
+  for(c = ctable.container; c < &ctable.container[NCONT]; c++){
+    // cprintf("Accessed Container %d: \n", c->containerID);
+    if(containers[c->containerID] == 1){
+      //This container is initialised
+      cprintf("The container with id %d is initialised: \n", c->containerID);
     }
   }
 }

@@ -194,6 +194,9 @@ void            clearpteu(pde_t *pgdir, char *uva);
 //  contanier_scheduler.c
 void addProcessToContainer(int pid, int containerID);
 void removeProcessFromContainer(int pid, int containerID);
+void listContainersHelper(void);
+void createContainer(int);
+void containerInit(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

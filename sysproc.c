@@ -19,7 +19,8 @@ int sys_create_container(void){
     containers[id] = 1;
     cprintf("Container created successfully\n");
   }
-  return 0;
+  createContainer(id);
+  return id;
 }
 
 int sys_destroy_container(void){
@@ -59,6 +60,11 @@ int sys_ps(void){
   int procID = myproc()->pid;
   int containerID = myproc()->containerID;
   psHelper(procID, containerID);
+  return 0;
+}
+
+int sys_list_containers(void){
+  listContainersHelper();
   return 0;
 }
 
