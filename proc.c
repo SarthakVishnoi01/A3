@@ -43,6 +43,17 @@ void psHelper(int procID, int containerID){
   }
 }
 
+void
+ps(void){
+
+  struct proc *p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state != UNUSED){
+      cprintf("pid:%d name:%s Container:%d\n",p->pid,p->name,p->containerID);
+    }
+  }
+}
+
 
 ////////////////////////////////////////////////////////////////////////
 void
@@ -345,39 +356,61 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+
+const char* getName(enum containerState s) 
+{
+   switch (s) 
+   {
+      case CRUNNING: return "CRUNNING";
+      case CWAITING: return "CWAITING";
+      case CUNUSED : return "CUNUSED";
+   }
+   return "None";
+}
+
+
 void
 scheduler(void)
 {
-  struct container* cont;
+  struct container* con;
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
 
-  for(;;){
-    // Enable interrupts on this processor.
-    sti();
+  //for(;;){
+  sti();    // Enable interrupts on this processor.
+  
+  acquire(&ctable.lock);
+  // Loop over process table looking for process to run.
+  cprintf("Num : %d\n",NCONT);
+  ps();
+  for(con = ctable.container; con < &ctable.container[NCONT]; con++){
+    cprintf("%d : %s",con->containerID,getName(con->state));
+    if(con->state != CWAITING)
+      continue;
+    con->state=CRUNNING;
+    //cprintf("%d\n",con->containerID);
+    
+    //cprintf("%d\n",con->containerID);
+    acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(con->presentProc[p->pid]){
+        if(p->state != RUNNABLE)
+          continue;
 
-    // Loop over process table looking for process to run.
-    for(p = ctable.container; p < &ctable.container[NCONT]; p++){
-      if(p->state != CWAITING)
-        continue;
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-      // p->container->c_state=RUNNING;
-
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+        c->proc = 0;
+      }
     }
     release(&ptable.lock);
   }
+  release(&ctable.lock);
+  while(1){};
+
 }
 
 // Enter scheduler.  Must hold only ptable.lock

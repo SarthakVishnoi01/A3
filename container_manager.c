@@ -24,35 +24,34 @@ struct ctable ctable;
 struct ptable ptable;
 
 
-// void container_scheduler(void)
-// {
-//   struct proc *p;
-//   struct cpu *c = mycpu();
-//   c->proc = 0;
-//
-//   for(;;){
-//     // Loop over process table looking for process to run.
-//     acquire(&ptable_container.lock);
-//     for(p = ptable_container.proc; p < &ptable_container.proc[NPROC_conctainer]; p++){
-//       if(p->state != WAITING)
-//         continue;
-//
-//       c->proc = p;
-//       p->state = READY;
-//
-//       while(p->state != WAITING){};
-//
-//       c->proc = 0;
-//     }
-//     release(&ptable_container.lock);
-//   }
-// }
+void container_scheduler(int cid)
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  struct container* con = &ctable.container[cid];
+
+  acquire(&ctable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(con->presentProc[p->pid]){
+      if(p->state != RUNNABLE)
+        continue;
+
+      c->proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
+      swtch(&(c->scheduler), p->context);
+      switchkvm();
+      c->proc = 0;
+    }
+  }
+  release(&ctable.lock);
+}
 
 void containerInit(void){
   struct container *con;
   for(int i=0; i<NCONT; i++){
     con = &ctable.container[i];
-    con->id = i;
+    con->containerID = i;
     con->state = CUNUSED;
     for(int j=0; j<NPROC; j++){
       con->presentProc[j] = 0;

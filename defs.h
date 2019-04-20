@@ -12,9 +12,14 @@ struct superblock;
 struct container;
 
 // container_manager.c
-void contanier_scheduler(int cid);
+
 extern int containers[];  //1 means this container is initialised 0 means it isn't
 extern struct ctable ctable;
+void addProcessToContainer(int pid, int containerID);
+void removeProcessFromContainer(int pid, int containerID);
+void listContainersHelper(void);
+void createContainer(int);
+void containerInit(void);
 
 // bio.c
 void            binit(void);
@@ -194,12 +199,6 @@ void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
 
-//  contanier_scheduler.c
-void addProcessToContainer(int pid, int containerID);
-void removeProcessFromContainer(int pid, int containerID);
-void listContainersHelper(void);
-void createContainer(int);
-void containerInit(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
