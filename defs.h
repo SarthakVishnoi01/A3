@@ -12,13 +12,14 @@ struct superblock;
 struct container;
 
 // container_manager.c
-
 extern int containers[];  //1 means this container is initialised 0 means it isn't
 extern struct ctable ctable;
 void addProcessToContainer(int pid, int containerID);
 void removeProcessFromContainer(int pid, int containerID);
 void listContainersHelper(void);
-
+void containerInit(void);
+void createContainer(int);
+void destroyContainer(int);
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
