@@ -9,13 +9,31 @@ main(void)
 	create_container(1);
   create_container(2);
   create_container(3);
-  // int cid = fork();
-  // if(cid == 0){
-  //   join_container(1);
-  // }
-  //Function to list the containers and pid's in it
+
+  int cid1 = fork();
+  if(cid1 == 0){
+    join_container(1);
+    ps();
+    wait();
+    // list_containers();
+    exit();
+  }
+  sleep(2);
+  // destroy_container(1);
   list_containers();
 
+  int cid2 = fork();
+  if(cid2 == 0){
+    join_container(2);
+    wait();
+    ps();
+    exit();
+  }
+
+  sleep(2);
+  // list_containers();
+
+  ps();
 	wait();
 	exit();
 }

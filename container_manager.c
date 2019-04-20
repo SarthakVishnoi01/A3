@@ -24,28 +24,29 @@ struct ctable ctable;
 struct ptable ptable;
 
 
-void container_scheduler(int cid)
-{
-  struct proc *p;
-  struct cpu *c = mycpu();
-  struct container* con = &ctable.container[cid];
-
-  acquire(&ctable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(con->presentProc[p->pid]){
-      if(p->state != RUNNABLE)
-        continue;
-
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
-      c->proc = 0;
-    }
-  }
-  release(&ctable.lock);
-}
+// void container_scheduler(void)
+// {
+//   struct proc *p;
+//   struct cpu *c = mycpu();
+//   c->proc = 0;
+//
+//   for(;;){
+//     // Loop over process table looking for process to run.
+//     acquire(&ptable_container.lock);
+//     for(p = ptable_container.proc; p < &ptable_container.proc[NPROC_conctainer]; p++){
+//       if(p->state != WAITING)
+//         continue;
+//
+//       c->proc = p;
+//       p->state = READY;
+//
+//       while(p->state != WAITING){};
+//
+//       c->proc = 0;
+//     }
+//     release(&ptable_container.lock);
+//   }
+// }
 
 void containerInit(void){
   struct container *con;
@@ -61,12 +62,38 @@ void containerInit(void){
 
 void createContainer(int id){
   struct container *con;
+  acquire(&ctable.lock);
   con = &ctable.container[id];
+  release(&ctable.lock);
   con->state = CWAITING;
+}
+
+void destroyContainer(int id){
+  struct container *con;
+  acquire(&ctable.lock);
+  con = &ctable.container[id];
+  release(&ctable.lock);
+  con->state = CUNUSED;
+
+  //Killing the processes which are present
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p<&ptable.proc[NPROC]; p++){
+    int pid = p->pid;
+    if(con->presentProc[pid] == 1){
+      //This proc is present in the container, SO KILL IT
+      con->presentProc[pid] = 0;
+      release(&ptable.lock);
+      kill(pid);
+      acquire(&ptable.lock);
+    }
+  }
+  release(&ptable.lock);
 }
 
 void addProcessToContainer(int pid, int containerID){
   struct container *con;
+  acquire(&ctable.lock);
   for(con = ctable.container; con < &ctable.container[NCONT]; con++){
     if(con->containerID == containerID){
       //This is the container ID, add this process
@@ -74,10 +101,12 @@ void addProcessToContainer(int pid, int containerID){
       break;
     }
   }
+  release(&ctable.lock);
 }
 
 void removeProcessFromContainer(int pid, int containerID){
   struct container *con;
+  acquire(&ctable.lock);
   for(con = ctable.container; con < &ctable.container[NCONT]; con++){
     if(con->containerID == containerID){
       //This is the container ID, remove this process
@@ -85,15 +114,23 @@ void removeProcessFromContainer(int pid, int containerID){
       break;
     }
   }
+  release(&ctable.lock);
 }
 
 void listContainersHelper(void){
   struct container *c;
+  acquire(&ctable.lock);
   for(c = ctable.container; c < &ctable.container[NCONT]; c++){
-    // cprintf("Accessed Container %d: \n", c->containerID);
     if(containers[c->containerID] == 1){
       //This container is initialised
       cprintf("The container with id %d is initialised: \n", c->containerID);
+      //Checking the processes in this container
+      for(int j=0; j<NPROC; j++){
+        if(c->presentProc[j] == 1){
+          cprintf("The process with id %d is present in container with id %d: \n", j, c->containerID);
+        }
+      }
     }
   }
+  release(&ctable.lock);
 }

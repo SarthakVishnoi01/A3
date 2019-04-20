@@ -27,6 +27,7 @@ int create_container(int);
 int leave_container(int);
 int destroy_container(int);
 int join_container(int);
+void ps();
 int list_containers(void);
 
 // ulib.c

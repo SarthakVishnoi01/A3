@@ -17,7 +17,7 @@ int sys_create_container(void){
   }
   else{
     containers[id] = 1;
-    cprintf("Container created successfully\n");
+    // cprintf("Container created successfully\n");
   }
   createContainer(id);
   return id;
@@ -30,8 +30,10 @@ int sys_destroy_container(void){
     cprintf("This is id is already non-existant\n");
   }
   else{
+    // cprintf("Container Destroyed Successfully\n");
     containers[id] = 0;
   }
+  destroyContainer(id);
   return 0;
 }
 
@@ -59,6 +61,7 @@ int sys_leave_container(void){
 int sys_ps(void){
   int procID = myproc()->pid;
   int containerID = myproc()->containerID;
+  cprintf("My containerID is: %d", containerID);
   psHelper(procID, containerID);
   return 0;
 }
