@@ -52,7 +52,7 @@ void containerInit(void){
   struct container *con;
   for(int i=0; i<NCONT; i++){
     con = &ctable.container[i];
-    con->id = i;
+    con->containerID = i;
     con->state = CUNUSED;
     for(int j=0; j<NPROC; j++){
       con->presentProc[j] = 0;
@@ -62,12 +62,38 @@ void containerInit(void){
 
 void createContainer(int id){
   struct container *con;
+  acquire(&ctable.lock);
   con = &ctable.container[id];
+  release(&ctable.lock);
   con->state = CWAITING;
+}
+
+void destroyContainer(int id){
+  struct container *con;
+  acquire(&ctable.lock);
+  con = &ctable.container[id];
+  release(&ctable.lock);
+  con->state = CUNUSED;
+
+  //Killing the processes which are present
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p<&ptable.proc[NPROC]; p++){
+    int pid = p->pid;
+    if(con->presentProc[pid] == 1){
+      //This proc is present in the container, SO KILL IT
+      con->presentProc[pid] = 0;
+      release(&ptable.lock);
+      kill(pid);
+      acquire(&ptable.lock);
+    }
+  }
+  release(&ptable.lock);
 }
 
 void addProcessToContainer(int pid, int containerID){
   struct container *con;
+  acquire(&ctable.lock);
   for(con = ctable.container; con < &ctable.container[NCONT]; con++){
     if(con->containerID == containerID){
       //This is the container ID, add this process
@@ -75,10 +101,12 @@ void addProcessToContainer(int pid, int containerID){
       break;
     }
   }
+  release(&ctable.lock);
 }
 
 void removeProcessFromContainer(int pid, int containerID){
   struct container *con;
+  acquire(&ctable.lock);
   for(con = ctable.container; con < &ctable.container[NCONT]; con++){
     if(con->containerID == containerID){
       //This is the container ID, remove this process
@@ -86,15 +114,23 @@ void removeProcessFromContainer(int pid, int containerID){
       break;
     }
   }
+  release(&ctable.lock);
 }
 
 void listContainersHelper(void){
   struct container *c;
+  acquire(&ctable.lock);
   for(c = ctable.container; c < &ctable.container[NCONT]; c++){
-    // cprintf("Accessed Container %d: \n", c->containerID);
     if(containers[c->containerID] == 1){
       //This container is initialised
       cprintf("The container with id %d is initialised: \n", c->containerID);
+      //Checking the processes in this container
+      for(int j=0; j<NPROC; j++){
+        if(c->presentProc[j] == 1){
+          cprintf("The process with id %d is present in container with id %d: \n", j, c->containerID);
+        }
+      }
     }
   }
+  release(&ctable.lock);
 }
