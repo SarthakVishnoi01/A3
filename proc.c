@@ -357,7 +357,7 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     for(p = ctable.container; p < &ctable.container[NCONT]; p++){
-      if(p->state != RUNNABLE)
+      if(p->state != CWAITING)
         continue;
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
