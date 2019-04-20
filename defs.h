@@ -11,8 +11,10 @@ struct stat;
 struct superblock;
 struct container;
 
-
+// container_manager.c
+void contanier_scheduler(int cid);
 extern int containers[];  //1 means this container is initialised 0 means it isn't
+extern struct ctable ctable;
 
 // bio.c
 void            binit(void);
@@ -107,6 +109,7 @@ int             pipewrite(struct pipe*, char*, int);
 
 //PAGEBREAK: 16
 // proc.c
+extern struct ptable ptable;
 int             cpuid(void);
 void            exit(void);
 int             fork(void);
