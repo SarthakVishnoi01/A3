@@ -383,39 +383,72 @@ const char* getName(enum containerState s)
 }
 
 
-void
-scheduler(void)
+/*
+void scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
 
+  struct container *con; 
   for(;;){
-    // Enable interrupts on this processor.
-    sti();
+    sti();    // Enable interrupts on this processor.
 
-    // Loop over process table looking for process to run.
-    acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    for(con = ctable.container; con < &ctable.container[NCONT]; con++){
+      
+      if(con->state != CWAITING)continue;
+
+      int ID = con->nextprocId;
+      if(ID<0)continue;
+      p = &ptable.proc[ID];
+      
+      con->nextprocId = nextproc(con);
+      
+      acquire(&ptable.lock);
+
       if(p->state != RUNNABLE)
         continue;
-
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
-
       swtch(&(c->scheduler), p->context);
       switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
       c->proc = 0;
+      release(&ptable.lock);      
     }
-    release(&ptable.lock);
+  }
+}
+*/
 
+
+void scheduler(void)
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  c->proc = 0;
+  struct container *con; 
+  for(;;){
+    sti();    // Enable interrupts on this processor.
+
+    for(con = ctable.container; con < &ctable.container[NCONT]; con++){
+      if(con->state != CWAITING){
+        continue;
+      }
+      acquire(&ptable.lock);
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(con->presentProc[p->pid]){
+          if(p->state != RUNNABLE)
+            continue;
+          c->proc = p;
+          switchuvm(p);
+          p->state = RUNNING;
+          swtch(&(c->scheduler), p->context);
+          switchkvm();
+          c->proc = 0;
+        }
+      }
+      release(&ptable.lock);
+    }
   }
 }
 
