@@ -185,6 +185,7 @@ userinit(void)
   tempContainer->presentProc[p->pid] =1;
   release(&ctable.lock);
 
+  //ctable.container[0].nextprocId = p->pid;
 }
 
 // Grow current process's memory by n bytes.
@@ -256,6 +257,8 @@ fork(void)
   tempContainer = &ctable.container[0];
   tempContainer->presentProc[np->pid] =1;
   release(&ctable.lock);
+
+   //ctable.container[0].nextprocId = pid;
 
   return pid;
 }
@@ -370,6 +373,13 @@ const char* getName(enum containerState s)
    return "None";
 }
 
+int nextproc(struct container* c){
+  for(int i = (c->nextprocId)+1;i<NPROC;i++){
+    if(c->presentProc[i])
+      return i;
+  }
+  return -1;
+}
 
 /*
 void scheduler(void)
@@ -430,6 +440,9 @@ void scheduler(void)
           c->proc = p;
           switchuvm(p);
           p->state = RUNNING;
+          //if(scheduler_log){
+            cprintf("Container %d : Scheduling process %d\n",con->containerID,p->pid);
+          //}
           swtch(&(c->scheduler), p->context);
           switchkvm();
           c->proc = 0;

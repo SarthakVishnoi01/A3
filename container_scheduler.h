@@ -17,4 +17,5 @@ struct container{
   enum containerState state;                  // Whetehr the container is running or not
   int nextGVA;
   struct pgTable pgTable;                 //PageTable for this container
+  int nextprocId;
 };

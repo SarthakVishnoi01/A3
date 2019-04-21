@@ -40,6 +40,7 @@ void containerInit(void){
   struct container *firstContainer;
   firstContainer = &ctable.container[0];
   firstContainer->state = CWAITING;
+
 }
 
 int createContainer(void){

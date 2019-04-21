@@ -117,6 +117,7 @@ int             pipewrite(struct pipe*, char*, int);
 //PAGEBREAK: 16
 // proc.c
 extern struct ptable ptable;
+extern int scheduler_log;
 int             cpuid(void);
 void            exit(void);
 int             fork(void);
