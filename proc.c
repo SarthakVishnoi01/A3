@@ -188,10 +188,13 @@ userinit(void)
   acquire(&ptable.lock);
   p->state = RUNNABLE;
   p->containerID = 0;
+  // int id = p->pid;
   release(&ptable.lock);
 
+  struct container *tempContainer;
   acquire(&ctable.lock);
-  ctable->container[0]->presentProc[p->pid] =1;
+  tempContainer = &ctable.container[0];
+  tempContainer->presentProc[p->pid] =1;
   release(&ctable.lock);
 
 }
@@ -260,8 +263,10 @@ fork(void)
   np->containerID = 0;
   release(&ptable.lock);
 
+  struct container *tempContainer;
   acquire(&ctable.lock);
-  ctable->container[0]->presentProc[p->pid] =1;
+  tempContainer = &ctable.container[0];
+  tempContainer->presentProc[np->pid] =1;
   release(&ctable.lock);
 
   return pid;

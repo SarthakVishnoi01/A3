@@ -19,10 +19,16 @@ struct ptable {
   struct proc proc[NPROC];
 };
 
+struct pageTable{
+  struct spinlock lock;
+  struct pageElement page[100];
+  int next;
+};
+
 
 struct ctable ctable;
 struct ptable ptable;
-
+struct pageTable pageTable;
 
 // void container_scheduler(void)
 // {
@@ -54,21 +60,27 @@ void containerInit(void){
     con = &ctable.container[i];
     con->containerID = i;
     con->state = CUNUSED;
+    con->nextGVA = 0;
     for(int j=0; j<NPROC; j++){
       con->presentProc[j] = 0;
     }
   }
+
   //Initialise Container 0
   struct container *firstContainer;
   firstContainer = &ctable.container[0];
   firstContainer->state = CWAITING;
+
+  //Initialise pagetable too
+  acquire(&pageTable.lock);
+  pageTable.next = 0;
+  release(&pageTable.lock);
 }
 
 int createContainer(void){
   struct container *c;
   acquire(&ctable.lock);
   int id = 0;
-  int flag = 0;
   for(c=ctable.container; c<&ctable.container[NCONT]; c++){
     id = c->containerID;
     if(containers[id] == 0){
@@ -79,9 +91,8 @@ int createContainer(void){
       return id;
     }
   }
-  cprintf("This is id is already created\n");
+  cprintf("Couldn't create a new container\n");
   release(&ctable.lock);
-  con->state = CWAITING;
   return -1;
 }
 
@@ -161,3 +172,21 @@ void listContainersHelper(void){
   }
   release(&ctable.lock);
 }
+
+// void* container_malloc(int numBytes, int pid){
+//   //Generate a GVA for this container
+//   struct container *c;
+//   acquire(&ctable.lock);
+//   for(c=ctable.container; c<&ctable.container[NCONT]; c++){
+//     if(c->presentProc[pid] == 1){
+//       //This is the container in which this process is present;
+//
+//       release(&ctable.lock);
+//       break;
+//     }
+//   }
+//
+//   acquire(&pageTable.lock);
+//
+//   release(&pageTable.lock);
+// }

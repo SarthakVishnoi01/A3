@@ -6,9 +6,9 @@ int
 main(void)
 {
 	// toggle();	// toggle the system trace on or off
-	create_container(1);
-  create_container(2);
-  create_container(3);
+	create_container();
+  create_container();
+  create_container();
 
   int cid1 = fork();
   if(cid1 == 0){
@@ -35,5 +35,13 @@ main(void)
 
   ps();
 	wait();
+
+
+
+	//Malloc
+	int *mal1 = malloc(6);
+	int *mal2 = malloc(10);
+	printf(1, "%d %d\n", *mal1, *mal2);
+	//malloc returns the address
 	exit();
 }

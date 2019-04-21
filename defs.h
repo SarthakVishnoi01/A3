@@ -14,12 +14,15 @@ struct container;
 // container_manager.c
 extern int containers[];  //1 means this container is initialised 0 means it isn't
 extern struct ctable ctable;
+extern struct pageTable pageTable;
 void addProcessToContainer(int pid, int containerID);
 void removeProcessFromContainer(int pid, int containerID);
 void listContainersHelper(void);
 void containerInit(void);
 int  createContainer(void);
 void destroyContainer(int);
+void* container_malloc(int);
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
