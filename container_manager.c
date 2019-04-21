@@ -69,10 +69,9 @@ int createContainer(void){
   struct container *c;
   acquire(&ctable.lock);
   int id = 0;
-  int flag = 0;
   for(c=ctable.container; c<&ctable.container[NCONT]; c++){
     id = c->containerID;
-    if(containers[id] == 0){
+    if(containers[id] == 0 && id!=0){
       //This is a free container
       containers[id] = 1;
       c->state = CWAITING;
@@ -80,9 +79,7 @@ int createContainer(void){
       return id;
     }
   }
-  cprintf("This is id is already created\n");
   release(&ctable.lock);
-  con->state = CWAITING;
   return -1;
 }
 

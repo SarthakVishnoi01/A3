@@ -192,7 +192,7 @@ userinit(void)
 
 
   acquire(&ctable.lock);
-  ctable->container[0]->presentProc[p->pid] =1;
+  ctable.container[0].presentProc[p->pid] =1;
   release(&ctable.lock);
 
   //ctable.container[0].nextprocId = p->pid;
@@ -263,7 +263,7 @@ fork(void)
   release(&ptable.lock);
 
   acquire(&ctable.lock);
-  ctable->container[0]->presentProc[p->pid] =1;
+  ctable.container[0].presentProc[pid] =1;
   release(&ctable.lock);
 
    //ctable.container[0].nextprocId = pid;
@@ -448,6 +448,9 @@ void scheduler(void)
           c->proc = p;
           switchuvm(p);
           p->state = RUNNING;
+          //if(scheduler_log){
+            cprintf("Container %d : Scheduling process %d\n",con->containerID,p->pid);
+          //}
           swtch(&(c->scheduler), p->context);
           switchkvm();
           c->proc = 0;

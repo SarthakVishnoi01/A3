@@ -20,6 +20,7 @@ void listContainersHelper(void);
 void containerInit(void);
 int  createContainer(void);
 void destroyContainer(int);
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
@@ -114,6 +115,7 @@ int             pipewrite(struct pipe*, char*, int);
 //PAGEBREAK: 16
 // proc.c
 extern struct ptable ptable;
+extern int scheduler_log;
 int             cpuid(void);
 void            exit(void);
 int             fork(void);
