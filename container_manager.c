@@ -58,14 +58,18 @@ void containerInit(void){
       con->presentProc[j] = 0;
     }
   }
+  acquire(&ctable.lock);
+  con = &ctable.container[0];
+  con->state = CWAITING;
+  release(&ctable.lock);
 }
 
 void createContainer(int id){
   struct container *con;
   acquire(&ctable.lock);
   con = &ctable.container[id];
-  release(&ctable.lock);
   con->state = CWAITING;
+  release(&ctable.lock);
 }
 
 void destroyContainer(int id){
