@@ -110,6 +110,11 @@ extern int sys_destroy_container(void);
 extern int sys_ps(void);
 extern int sys_list_containers(void);
 extern int sys_container_malloc(void);
+extern int sys_scheduler_log_on(void);
+extern int sys_scheduler_log_off(void);
+extern int sys_memory_log_on(void);
+extern int sys_memory_log_off(void);
+
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -140,9 +145,15 @@ static int (*syscalls[])(void) = {
 [SYS_ps]                 sys_ps,
 [SYS_list_containers]    sys_list_containers,
 [SYS_container_malloc]   sys_container_malloc,
+[SYS_scheduler_log_on]   sys_scheduler_log_on,
+[SYS_scheduler_log_off]  sys_scheduler_log_off,
+[SYS_memory_log_on]      sys_memory_log_on,
+[SYS_memory_log_off]     sys_memory_log_off,
 };
 
 int containers[NCONT] = {0};
+int schedulerLog = 0;
+int memoryLog = 0;
 void
 syscall(void)
 {

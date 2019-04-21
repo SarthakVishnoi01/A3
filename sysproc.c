@@ -71,6 +71,26 @@ int sys_container_malloc(void){
   return 0;
 }
 
+int sys_scheduler_log_on(void){
+  schedulerLog = 1;
+  return 0;
+}
+
+int sys_scheduler_log_off(void){
+  schedulerLog = 0;
+  return 0;
+}
+
+int sys_memory_log_on(void){
+  memoryLog = 1;
+  return 0;
+}
+
+int sys_memory_log_off(void){
+  memoryLog = 0;
+  return 0;
+}
+
 // SYS_calls which were implemented from before
 int
 sys_fork(void)

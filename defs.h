@@ -11,6 +11,9 @@ struct stat;
 struct superblock;
 struct container;
 
+extern int schedulerLog; // 1 if we want output
+extern int memoryLog; // 1 if we want output
+
 // container_manager.c
 extern int containers[];  //1 means this container is initialised 0 means it isn't
 extern struct ctable ctable;

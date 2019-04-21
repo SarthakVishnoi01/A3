@@ -161,8 +161,10 @@ void container_malloc(int numBytes, int pid){
       c->pgTable.page[nextFree].pid = pid;
 
       //Print GVA->HVA
-      cprintf("%d  %p\n", nextGVA, c->pgTable.page[nextFree].HVA);
-      cprintf("%d\n", pid);
+      if(memoryLog == 1){
+        cprintf("%d  %p\n", nextGVA, c->pgTable.page[nextFree].HVA);
+        cprintf("%d\n", pid);
+      }
     }
   }
   release(&ctable.lock);

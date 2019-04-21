@@ -440,9 +440,9 @@ void scheduler(void)
           c->proc = p;
           switchuvm(p);
           p->state = RUNNING;
-          //if(scheduler_log){
+          if(schedulerLog){
             cprintf("Container %d : Scheduling process %d\n",con->containerID,p->pid);
-          //}
+          }
           swtch(&(c->scheduler), p->context);
           switchkvm();
           c->proc = 0;

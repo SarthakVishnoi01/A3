@@ -47,7 +47,9 @@ main(void)
 	if(cid3 == 0){
 		join_container(2);
 		ps();
+		memory_log_on();
 		container_malloc(5);
+		memory_log_off();
 		container_malloc(3);
 		wait();
 		exit();
