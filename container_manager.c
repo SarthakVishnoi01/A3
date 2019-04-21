@@ -19,40 +19,9 @@ struct ptable {
   struct proc proc[NPROC];
 };
 
-struct pageTable{
-  struct spinlock lock;
-  struct pageElement page[100];
-  int next;
-};
-
-
 struct ctable ctable;
 struct ptable ptable;
-struct pageTable pageTable;
-
-// void container_scheduler(void)
-// {
-//   struct proc *p;
-//   struct cpu *c = mycpu();
-//   c->proc = 0;
-//
-//   for(;;){
-//     // Loop over process table looking for process to run.
-//     acquire(&ptable_container.lock);
-//     for(p = ptable_container.proc; p < &ptable_container.proc[NPROC_conctainer]; p++){
-//       if(p->state != WAITING)
-//         continue;
-//
-//       c->proc = p;
-//       p->state = READY;
-//
-//       while(p->state != WAITING){};
-//
-//       c->proc = 0;
-//     }
-//     release(&ptable_container.lock);
-//   }
-// }
+struct pgTable pgTable;
 
 void containerInit(void){
   struct container *con;
@@ -61,6 +30,7 @@ void containerInit(void){
     con->containerID = i;
     con->state = CUNUSED;
     con->nextGVA = 0;
+    con->pgTable.next = 0; //Setting Next for this pgTable
     for(int j=0; j<NPROC; j++){
       con->presentProc[j] = 0;
     }
@@ -70,11 +40,6 @@ void containerInit(void){
   struct container *firstContainer;
   firstContainer = &ctable.container[0];
   firstContainer->state = CWAITING;
-
-  //Initialise pagetable too
-  acquire(&pageTable.lock);
-  pageTable.next = 0;
-  release(&pageTable.lock);
 }
 
 int createContainer(void){
@@ -83,7 +48,7 @@ int createContainer(void){
   int id = 0;
   for(c=ctable.container; c<&ctable.container[NCONT]; c++){
     id = c->containerID;
-    if(containers[id] == 0){
+    if(containers[id] == 0 && id!=0){
       //This is a free container
       containers[id] = 1;
       c->state = CWAITING;
@@ -173,20 +138,31 @@ void listContainersHelper(void){
   release(&ctable.lock);
 }
 
-// void* container_malloc(int numBytes, int pid){
-//   //Generate a GVA for this container
-//   struct container *c;
-//   acquire(&ctable.lock);
-//   for(c=ctable.container; c<&ctable.container[NCONT]; c++){
-//     if(c->presentProc[pid] == 1){
-//       //This is the container in which this process is present;
-//
-//       release(&ctable.lock);
-//       break;
-//     }
-//   }
-//
-//   acquire(&pageTable.lock);
-//
-//   release(&pageTable.lock);
-// }
+void container_malloc(int numBytes, int pid){
+  // Generate a GVA for this container
+  struct container *c;
+  int nextFree=0;
+  int nextGVA;
+  acquire(&ctable.lock);
+  for(c=ctable.container; c<&ctable.container[NCONT]; c++){
+    if(c->presentProc[pid] == 1){
+      //This is the container in which this process is present;
+      nextGVA = c->nextGVA;
+      nextFree = c->pgTable.next;
+
+      //Updation
+      c->nextGVA = c->nextGVA + numBytes;
+      c->pgTable.next++;
+
+      //Setting
+      c->pgTable.page[nextFree].GVA = nextGVA;
+      c->pgTable.page[nextFree].HVA = kalloc();
+      c->pgTable.page[nextFree].pid = pid;
+
+      //Print GVA->HVA
+      cprintf("%d  %p\n", nextGVA, c->pgTable.page[nextFree].HVA);
+      cprintf("%d\n", pid);
+    }
+  }
+  release(&ctable.lock);
+}

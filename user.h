@@ -29,6 +29,7 @@ int destroy_container(int);
 int join_container(int);
 void ps();
 int list_containers(void);
+int container_malloc(int);
 
 // ulib.c
 int stat(const char*, struct stat*);

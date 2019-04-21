@@ -26,3 +26,4 @@
 #define SYS_destroy_container 25
 #define SYS_ps                26
 #define SYS_list_containers   27
+#define SYS_container_malloc  28

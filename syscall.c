@@ -109,6 +109,7 @@ extern int sys_leave_container(void);
 extern int sys_destroy_container(void);
 extern int sys_ps(void);
 extern int sys_list_containers(void);
+extern int sys_container_malloc(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -137,7 +138,8 @@ static int (*syscalls[])(void) = {
 [SYS_leave_container]    sys_leave_container,
 [SYS_destroy_container]  sys_destroy_container,
 [SYS_ps]                 sys_ps,
-[SYS_list_containers]    sys_list_containers, 
+[SYS_list_containers]    sys_list_containers,
+[SYS_container_malloc]   sys_container_malloc,
 };
 
 int containers[NCONT] = {0};

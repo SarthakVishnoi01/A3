@@ -21,7 +21,7 @@ void listContainersHelper(void);
 void containerInit(void);
 int  createContainer(void);
 void destroyContainer(int);
-void* container_malloc(int);
+void container_malloc(int, int);
 
 // bio.c
 void            binit(void);
