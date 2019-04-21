@@ -58,18 +58,32 @@ void containerInit(void){
       con->presentProc[j] = 0;
     }
   }
-  acquire(&ctable.lock);
-  con = &ctable.container[0];
-  con->state = CWAITING;
-  release(&ctable.lock);
+  //Initialise Container 0
+  struct container *firstContainer;
+  firstContainer = &ctable.container[0];
+  firstContainer->state = CWAITING;
+
 }
 
-void createContainer(int id){
-  struct container *con;
+int createContainer(void){
+  struct container *c;
   acquire(&ctable.lock);
-  con = &ctable.container[id];
-  con->state = CWAITING;
+  int id = 0;
+  int flag = 0;
+  for(c=ctable.container; c<&ctable.container[NCONT]; c++){
+    id = c->containerID;
+    if(containers[id] == 0){
+      //This is a free container
+      containers[id] = 1;
+      c->state = CWAITING;
+      release(&ctable.lock);
+      return id;
+    }
+  }
+  cprintf("This is id is already created\n");
   release(&ctable.lock);
+  con->state = CWAITING;
+  return -1;
 }
 
 void destroyContainer(int id){
@@ -105,6 +119,11 @@ void addProcessToContainer(int pid, int containerID){
       break;
     }
   }
+
+  //Deleting this from Container 0
+  struct container *firstContainer;
+  firstContainer = &ctable.container[0];
+  firstContainer->presentProc[pid] = 0;
   release(&ctable.lock);
 }
 
@@ -118,6 +137,11 @@ void removeProcessFromContainer(int pid, int containerID){
       break;
     }
   }
+
+  //Adding this process to root container
+  struct container *firstContainer;
+  firstContainer = &ctable.container[0];
+  firstContainer->presentProc[pid] = 1;
   release(&ctable.lock);
 }
 

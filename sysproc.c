@@ -11,15 +11,7 @@
 //Sys_calls which I will implement
 int sys_create_container(void){
   int id;
-  argint(0, &id);
-  if(containers[id] == 1){
-    cprintf("This is id is already created\n");
-  }
-  else{
-    containers[id] = 1;
-    // cprintf("Container created successfully\n");
-  }
-  createContainer(id);
+  id = createContainer();
   return id;
 }
 
