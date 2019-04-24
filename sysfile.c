@@ -75,6 +75,9 @@ sys_read(void)
 
   if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
     return -1;
+  struct inode *tempINODE = f->ip;
+  if(myproc()->containerID != tempINODE->containeID)
+    return -1;
   return fileread(f, p, n);
 }
 
@@ -87,6 +90,10 @@ sys_write(void)
 
   if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
     return -1;
+  struct inode *tempINODE = f->ip;
+  if(myproc()->containerID != tempINODE->containeID)
+    return -1;
+
   return filewrite(f, p, n);
 }
 
@@ -97,6 +104,9 @@ sys_close(void)
   struct file *f;
 
   if(argfd(0, &fd, &f) < 0)
+    return -1;
+  struct inode *tempINODE = f->ip;
+  if(myproc()->containerID != tempINODE->containeID)
     return -1;
   myproc()->ofile[fd] = 0;
   fileclose(f);
@@ -265,6 +275,8 @@ create(char *path, short type, short major, short minor)
   ip->major = major;
   ip->minor = minor;
   ip->nlink = 1;
+  // Setting containerID
+  ip->containerID = myproc()->containerID;
   iupdate(ip);
 
   if(type == T_DIR){  // Create . and .. entries.
@@ -290,20 +302,65 @@ sys_open(void)
   int fd, omode;
   struct file *f;
   struct inode *ip;
-
+  // struct proc *currProc = myproc();
+  int cid = myproc()->containerID;
   if(argstr(0, &path) < 0 || argint(1, &omode) < 0)
     return -1;
 
+  // cprintf("Mode is: %d\n", O_CREATE);
+  // cprintf("Length of Input file is: %d\n", strlen(path));
   begin_op();
 
+  // Create a new path
+  char newPath[strlen(path)+2];
+  for(int i=0; i<strlen(path); i++){
+    newPath[i] = path[i];
+  }
+  //Appending container ID
+  char ID = '0';
+  if(cid == 0){
+    ID = '0';
+  }
+  else if(cid == 1){
+    ID = '1';
+  }
+  else if(cid == 2){
+    ID = '2';
+  }
+  else if(cid == 3){
+    ID = '3';
+  }
+  else if(cid == 4){
+    ID = '4';
+  }
+  else if(cid == 5){
+    ID = '5';
+  }
+  else if(cid == 6){
+    ID = '6';
+  }
+  else if(cid == 7){
+    ID = '7';
+  }
+  else if(cid == 8){
+    ID = '8';
+  }
+  else if(cid == 9){
+    ID = '9';
+  }
+
+  newPath[strlen(path)] = ID;
+  newPath[strlen(path)+1] = '\0';
+
   if(omode & O_CREATE){
-    ip = create(path, T_FILE, 0, 0);
+    cprintf("%s\n", newPath);
+    ip = create(newPath, T_FILE, 0, 0);
     if(ip == 0){
       end_op();
       return -1;
     }
   } else {
-    if((ip = namei(path)) == 0){
+    if((ip = namei(newPath)) == 0){
       end_op();
       return -1;
     }
@@ -375,7 +432,7 @@ sys_chdir(void)
   char *path;
   struct inode *ip;
   struct proc *curproc = myproc();
-  
+
   begin_op();
   if(argstr(0, &path) < 0 || (ip = namei(path)) == 0){
     end_op();

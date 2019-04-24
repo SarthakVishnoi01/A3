@@ -43,18 +43,20 @@ main(void)
 	// int *mal2 = malloc(10);
 	// printf(1, "%d %d\n", mal1, mal2);
 	//malloc returns the address
-	int cid3 = fork();
-	if(cid3 == 0){
-		join_container(2);
-		ps();
-		memory_log_on();
-		container_malloc(5);
-		memory_log_off();
-		container_malloc(3);
-		wait();
-		exit();
-	}
-	sleep(2);
-	wait();
+	// int cid3 = fork();
+	int fd = open("myfile.txt",512);
+	close(fd);
+	// if(cid3 == 0){
+	// 	join_container(2);
+	// 	ps();
+	// 	memory_log_on();
+	// 	container_malloc(5);
+	// 	memory_log_off();
+	// 	container_malloc(3);
+	// 	wait();
+	// 	exit();
+	// }
+	// sleep(2);
+	// wait();
 	exit();
 }
