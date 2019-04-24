@@ -45,18 +45,6 @@ void psHelper(int procID, int containerID){
   release(&ptable.lock);
 }
 
-void
-ps(void){
-
-  struct proc *p;
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->state != UNUSED){
-      cprintf("pid:%d name:%s Container:%d\n",p->pid,p->name,p->containerID);
-    }
-  }
-}
-
-
 ////////////////////////////////////////////////////////////////////////
 void
 pinit(void)
@@ -188,11 +176,13 @@ userinit(void)
   acquire(&ptable.lock);
   p->state = RUNNABLE;
   p->containerID = 0;
+  // int id = p->pid;
   release(&ptable.lock);
 
-
+  struct container *tempContainer;
   acquire(&ctable.lock);
-  ctable.container[0].presentProc[p->pid] =1;
+  tempContainer = &ctable.container[0];
+  tempContainer->presentProc[p->pid] =1;
   release(&ctable.lock);
 
   //ctable.container[0].nextprocId = p->pid;
@@ -262,8 +252,10 @@ fork(void)
   np->containerID = 0;
   release(&ptable.lock);
 
+  struct container *tempContainer;
   acquire(&ctable.lock);
-  ctable.container[0].presentProc[pid] =1;
+  tempContainer = &ctable.container[0];
+  tempContainer->presentProc[np->pid] =1;
   release(&ctable.lock);
 
    //ctable.container[0].nextprocId = pid;
@@ -396,20 +388,20 @@ void scheduler(void)
   struct cpu *c = mycpu();
   c->proc = 0;
 
-  struct container *con; 
+  struct container *con;
   for(;;){
     sti();    // Enable interrupts on this processor.
 
     for(con = ctable.container; con < &ctable.container[NCONT]; con++){
-      
+
       if(con->state != CWAITING)continue;
 
       int ID = con->nextprocId;
       if(ID<0)continue;
       p = &ptable.proc[ID];
-      
+
       con->nextprocId = nextproc(con);
-      
+
       acquire(&ptable.lock);
 
       if(p->state != RUNNABLE)
@@ -420,7 +412,7 @@ void scheduler(void)
       swtch(&(c->scheduler), p->context);
       switchkvm();
       c->proc = 0;
-      release(&ptable.lock);      
+      release(&ptable.lock);
     }
   }
 }
@@ -432,7 +424,7 @@ void scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  struct container *con; 
+  struct container *con;
   for(;;){
     sti();    // Enable interrupts on this processor.
 
@@ -448,9 +440,9 @@ void scheduler(void)
           c->proc = p;
           switchuvm(p);
           p->state = RUNNING;
-          //if(scheduler_log){
+          if(schedulerLog){
             cprintf("Container %d : Scheduling process %d\n",con->containerID,p->pid);
-          //}
+          }
           swtch(&(c->scheduler), p->context);
           switchkvm();
           c->proc = 0;

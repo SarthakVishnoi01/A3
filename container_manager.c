@@ -19,34 +19,9 @@ struct ptable {
   struct proc proc[NPROC];
 };
 
-
 struct ctable ctable;
 struct ptable ptable;
-
-
-// void container_scheduler(void)
-// {
-//   struct proc *p;
-//   struct cpu *c = mycpu();
-//   c->proc = 0;
-//
-//   for(;;){
-//     // Loop over process table looking for process to run.
-//     acquire(&ptable_container.lock);
-//     for(p = ptable_container.proc; p < &ptable_container.proc[NPROC_conctainer]; p++){
-//       if(p->state != WAITING)
-//         continue;
-//
-//       c->proc = p;
-//       p->state = READY;
-//
-//       while(p->state != WAITING){};
-//
-//       c->proc = 0;
-//     }
-//     release(&ptable_container.lock);
-//   }
-// }
+struct pgTable pgTable;
 
 void containerInit(void){
   struct container *con;
@@ -54,10 +29,13 @@ void containerInit(void){
     con = &ctable.container[i];
     con->containerID = i;
     con->state = CUNUSED;
+    con->nextGVA = 0;
+    con->pgTable.next = 0; //Setting Next for this pgTable
     for(int j=0; j<NPROC; j++){
       con->presentProc[j] = 0;
     }
   }
+
   //Initialise Container 0
   struct container *firstContainer;
   firstContainer = &ctable.container[0];
@@ -79,6 +57,7 @@ int createContainer(void){
       return id;
     }
   }
+  cprintf("Couldn't create a new container\n");
   release(&ctable.lock);
   return -1;
 }
@@ -154,6 +133,37 @@ void listContainersHelper(void){
         if(c->presentProc[j] == 1){
           cprintf("The process with id %d is present in container with id %d: \n", j, c->containerID);
         }
+      }
+    }
+  }
+  release(&ctable.lock);
+}
+
+void container_malloc(int numBytes, int pid){
+  // Generate a GVA for this container
+  struct container *c;
+  int nextFree=0;
+  int nextGVA;
+  acquire(&ctable.lock);
+  for(c=ctable.container; c<&ctable.container[NCONT]; c++){
+    if(c->presentProc[pid] == 1){
+      //This is the container in which this process is present;
+      nextGVA = c->nextGVA;
+      nextFree = c->pgTable.next;
+
+      //Updation
+      c->nextGVA = c->nextGVA + numBytes;
+      c->pgTable.next++;
+
+      //Setting
+      c->pgTable.page[nextFree].GVA = nextGVA;
+      c->pgTable.page[nextFree].HVA = kalloc();
+      c->pgTable.page[nextFree].pid = pid;
+
+      //Print GVA->HVA
+      if(memoryLog == 1){
+        cprintf("%d  %p\n", nextGVA, c->pgTable.page[nextFree].HVA);
+        cprintf("%d\n", pid);
       }
     }
   }

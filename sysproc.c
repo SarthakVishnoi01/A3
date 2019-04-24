@@ -53,13 +53,41 @@ int sys_leave_container(void){
 int sys_ps(void){
   int procID = myproc()->pid;
   int containerID = myproc()->containerID;
-  cprintf("My containerID is: %d", containerID);
+  cprintf("My containerID is: %d\n", containerID);
   psHelper(procID, containerID);
   return 0;
 }
 
 int sys_list_containers(void){
   listContainersHelper();
+  return 0;
+}
+
+int sys_container_malloc(void){
+  int numBytes;
+  argint(0, &numBytes);
+  int pid = myproc()->pid;
+  container_malloc(numBytes, pid);
+  return 0;
+}
+
+int sys_scheduler_log_on(void){
+  schedulerLog = 1;
+  return 0;
+}
+
+int sys_scheduler_log_off(void){
+  schedulerLog = 0;
+  return 0;
+}
+
+int sys_memory_log_on(void){
+  memoryLog = 1;
+  return 0;
+}
+
+int sys_memory_log_off(void){
+  memoryLog = 0;
   return 0;
 }
 

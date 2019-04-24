@@ -10,30 +10,53 @@ main(void)
   create_container();
   create_container();
 
-  int cid1 = fork();
-  if(cid1 == 0){
-    join_container(1);
-    ps();
-    wait();
-    // list_containers();
-    exit();
-  }
-  sleep(2);
-  // destroy_container(1);
-  list_containers();
-
-  int cid2 = fork();
-  if(cid2 == 0){
-    join_container(2);
-    wait();
-    ps();
-    exit();
-  }
-
-  sleep(2);
+  // int cid1 = fork();
+  // if(cid1 == 0){
+  //   join_container(1);
+  //   ps();
+  //   wait();
+  //   // list_containers();
+  //   exit();
+  // }
+  // sleep(2);
+  // // destroy_container(1);
   // list_containers();
+	//
+  // int cid2 = fork();
+  // if(cid2 == 0){
+  //   join_container(2);
+  //   wait();
+  //   ps();
+  //   exit();
+  // }
+	//
+  // sleep(2);
+  // // list_containers();
+	//
+  // ps();
+	// wait();
 
-  ps();
-	wait();
+
+
+	//Malloc
+	// int *mal1 = malloc(6);
+	// int *mal2 = malloc(10);
+	// printf(1, "%d %d\n", mal1, mal2);
+	//malloc returns the address
+	// int cid3 = fork();
+	int fd = open("myfile.txt",512);
+	close(fd);
+	// if(cid3 == 0){
+	// 	join_container(2);
+	// 	ps();
+	// 	memory_log_on();
+	// 	container_malloc(5);
+	// 	memory_log_off();
+	// 	container_malloc(3);
+	// 	wait();
+	// 	exit();
+	// }
+	// sleep(2);
+	// wait();
 	exit();
 }

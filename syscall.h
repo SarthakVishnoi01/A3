@@ -26,3 +26,8 @@
 #define SYS_destroy_container 25
 #define SYS_ps                26
 #define SYS_list_containers   27
+#define SYS_container_malloc  28
+#define SYS_memory_log_on     29
+#define SYS_memory_log_off    30
+#define SYS_scheduler_log_on  31
+#define SYS_scheduler_log_off 32
