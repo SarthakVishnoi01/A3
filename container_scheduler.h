@@ -18,5 +18,4 @@ struct container{
   int nextGVA;
   struct pgTable pgTable;                 //PageTable for this container
   int nextprocId;
-  struct inode* root
 };
