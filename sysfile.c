@@ -295,6 +295,13 @@ create(char *path, short type, short major, short minor)
   return ip;
 }
 
+char map(int n){
+  char e = '\0';
+  if(n==0)
+    return e;
+  return '0'+n;
+}
+
 int
 sys_open(void)
 {
@@ -316,41 +323,17 @@ sys_open(void)
   for(int i=0; i<strlen(path); i++){
     newPath[i] = path[i];
   }
-  //Appending container ID
-  char ID = '0';
-  if(cid == 0){
-    ID = '0';
-  }
-  else if(cid == 1){
-    ID = '1';
-  }
-  else if(cid == 2){
-    ID = '2';
-  }
-  else if(cid == 3){
-    ID = '3';
-  }
-  else if(cid == 4){
-    ID = '4';
-  }
-  else if(cid == 5){
-    ID = '5';
-  }
-  else if(cid == 6){
-    ID = '6';
-  }
-  else if(cid == 7){
-    ID = '7';
-  }
-  else if(cid == 8){
-    ID = '8';
-  }
-  else if(cid == 9){
-    ID = '9';
-  }
+
+  char ID = map(cid);
 
   newPath[strlen(path)] = ID;
   newPath[strlen(path)+1] = '\0';
+
+  struct inode* Inode = namei(newPath);
+  if((Inode>0) && (Inode->containerID!= myproc()->containerID)){
+    end_op();
+    return -1;
+  }
 
   if(omode & O_CREATE){
     cprintf("%s\n", newPath);
