@@ -31,3 +31,4 @@
 #define SYS_memory_log_off    30
 #define SYS_scheduler_log_on  31
 #define SYS_scheduler_log_off 32
+#define SYS_getcid			  33

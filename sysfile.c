@@ -75,11 +75,11 @@ sys_read(void)
 
   if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
     return -1;
-  struct inode *tempINODE = f->ip;
+  /*struct inode *tempINODE = f->ip;
   if(myproc()->containerID != tempINODE->containerID){
     // cprintf("I end up here with procID:%d\n", myproc()->pid);
     return -1;
-  }
+  }*/
   return fileread(f, p, n);
 }
 
@@ -131,10 +131,12 @@ sys_fstat(void)
   struct file *f;
   struct stat *st;
 
-  if(argfd(0, 0, &f) < 0 || argptr(1, (void*)&st, sizeof(*st)) < 0)
+  if(argfd(0, 0, &f) < 0 || argptr(1, (void*)&st, sizeof(*st)) < 0){
     return -1;
+  }
   return filestat(f, st);
 }
+
 
 // Create the path new as a link to the same inode as old.
 int
@@ -314,6 +316,7 @@ char map(int n){
   return '0'+n;
 }
 
+
 int
 sys_open(void)
 {
@@ -324,7 +327,7 @@ sys_open(void)
   // struct proc *currProc = myproc();
   int cid = myproc()->containerID;
   if(argstr(0, &path) < 0 || argint(1, &omode) < 0){
-    cprintf("Error 6\n");
+    //cprintf("Error 6\n");
     return -1;
   }
 
@@ -337,10 +340,18 @@ sys_open(void)
   for(int i=0; i<strlen(path); i++){
     newPath[i] = path[i];
   }
-
   char ID = map(cid);
   newPath[strlen(path)] = ID;
   newPath[strlen(path)+1] = '\0';
+
+  if(strncmp(".",path,1)==0){
+    newPath[0] = '.';
+    newPath[1] = '\0';
+  }
+  /*if((omode & O_STAT) ){
+    newPath[strlen(path)] = '\0';
+    omode = O_RDONLY;
+  }*/
 
   // struct inode* Inode = namei(newPath);
   // if((Inode>0) && (Inode->containerID!= myproc()->containerID)){
@@ -350,16 +361,16 @@ sys_open(void)
   // }
 
   if(omode & O_CREATE){
-    cprintf("%s\n", newPath);
+    //cprintf("%s\n", newPath);
     ip = create(newPath, T_FILE, 0, 0);
     if(ip == 0){
       end_op();
-      cprintf("Error 2\n");
+      //cprintf("Error 2\n");
       return -1;
     }
   } else {
     if((ip = namei(newPath)) == 0){
-      cprintf("Error 3\n");
+      //cprintf("Error 3\n");
       end_op();
       return -1;
     }
@@ -367,7 +378,7 @@ sys_open(void)
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
       end_op();
-      cprintf("Error 4\n");
+      //cprintf("Error 4\n");
 
       return -1;
     }
@@ -378,7 +389,7 @@ sys_open(void)
       fileclose(f);
     iunlockput(ip);
     end_op();
-    cprintf("Error 5\n");
+    //cprintf("Error 5\n");
     return -1;
   }
   iunlock(ip);

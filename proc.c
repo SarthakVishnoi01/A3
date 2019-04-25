@@ -5,7 +5,6 @@
 #include "mmu.h"
 #include "x86.h"
 #include "proc.h"
-#include "container_scheduler.h"
 #include "spinlock.h"
 
 
@@ -37,8 +36,8 @@ void psHelper(int procID, int containerID){
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->containerID == containerID){
-      if(p->state == RUNNING || p->state == RUNNABLE){
-        cprintf("pid:%d name:%s\n", p->pid, p->name);
+      if(p->state != UNUSED ){
+        cprintf("pid:%d name:%s Container:%d\n", p->pid, p->name,p-> containerID);
       }
     }
   }
@@ -60,6 +59,39 @@ void containerInit(void){
   firstContainer = &ctable.container[0];
   firstContainer->state = CWAITING;
 }
+
+
+void container_malloc(int numBytes, int pid){
+  // Generate a GVA for this container
+  struct container *c;
+  int nextFree=0;
+  int nextGVA;
+  acquire(&ctable.lock);
+  for(c=ctable.container; c<&ctable.container[NCONT]; c++){
+    if(c->containerID == myproc()->containerID){
+      //This is the container in which this process is present;
+      nextGVA = c->nextGVA;
+      nextFree = c->pgTable.next;
+
+      //Updation
+      c->nextGVA = c->nextGVA + numBytes;
+      c->pgTable.next++;
+
+      //Setting
+      c->pgTable.page[nextFree].GVA = nextGVA;
+      c->pgTable.page[nextFree].HVA = kalloc();
+      c->pgTable.page[nextFree].pid = pid;
+
+      //Print GVA->HVA
+      if(memoryLog == 1){
+        cprintf("%d  %p\n", nextGVA, c->pgTable.page[nextFree].HVA);
+        cprintf("%d\n", pid);
+      }
+    }
+  }
+  release(&ctable.lock);
+}
+
 
 int createContainer(void){
   struct container *c;
@@ -113,6 +145,7 @@ void addProcessToContainer(int pid, int containerID){
     }
   }
   release(&ptable.lock);
+  cprintf("Process %d added to %d container\n",pid,containerID);
 }
 
 void removeProcessFromContainer(int pid){
@@ -262,9 +295,10 @@ userinit(void)
   // writes to be visible, and the lock is also needed
   // because the assignment might not be atomic.
 
-  // acquire(&ptable.lock);
+  acquire(&ptable.lock);
   p->state = RUNNABLE;
-  // release(&ptable.lock);
+  p->containerID = 0;
+  release(&ptable.lock);
   // acquire(&ctable.lock);
   // struct container *con;
   // con = &ctable.container[0];
@@ -292,6 +326,19 @@ growproc(int n)
   curproc->sz = sz;
   switchuvm(curproc);
   return 0;
+}
+
+int gtcid(){
+  struct proc *p;
+
+  int pd = myproc()->pid;
+  
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid==pd)
+      break;
+  }
+    
+  return p->containerID;
 }
 
 // Create a new process copying p as the parent.
@@ -334,7 +381,7 @@ fork(void)
 
   acquire(&ptable.lock);
   np->state = RUNNABLE;
-  // np->containerID = 0;
+  np->containerID = 0;
   release(&ptable.lock);
 
   // struct container *tempContainer;
@@ -458,15 +505,8 @@ const char* getName(enum containerState s)
    return "None";
 }
 
-// int nextproc(struct container* c){
-//   for(int i = (c->nextprocId)+1;i<NPROC;i++){
-//     if(c->presentProc[i])
-//       return i;
-//   }
-//   return -1;
-// }
 
-void
+/*void
 scheduler(void)
 {
   struct proc *p;
@@ -501,77 +541,43 @@ scheduler(void)
 
   }
 }
-
-// void scheduler(void)
-// {
-//   struct proc *p;
-//   struct cpu *c = mycpu();
-//   c->proc = 0;
-//
-//   struct container *con;
-//   for(;;){
-//     sti();    // Enable interrupts on this processor.
-//
-//     for(con = ctable.container; con < &ctable.container[NCONT]; con++){
-//
-//       if(con->state != CWAITING)continue;
-//
-//       int ID = con->nextprocId;
-//       if(ID<0)continue;
-//       p = &ptable.proc[ID];
-//
-//       con->nextprocId = nextproc(con);
-//
-//       acquire(&ptable.lock);
-//
-//       if(p->state != RUNNABLE)
-//         continue;
-//       c->proc = p;
-//       switchuvm(p);
-//       p->state = RUNNING;
-//       swtch(&(c->scheduler), p->context);
-//       switchkvm();
-//       c->proc = 0;
-//       release(&ptable.lock);
-//     }
-//   }
-// }
+*/
 
 
 
-// void scheduler(void)
-// {
-//   struct proc *p;
-//   struct cpu *c = mycpu();
-//   c->proc = 0;
-//   struct container *con;
-//   for(;;){
-//     sti();    // Enable interrupts on this processor.
-//
-//     for(con = ctable.container; con < &ctable.container[NCONT]; con++){
-//       if(con->state != CWAITING){
-//         continue;
-//       }
-//       acquire(&ptable.lock);
-//       for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-//         if(con->presentProc[p->pid]){
-//           if(p->state != RUNNABLE)
-//             continue;
-//           c->proc = p;
-//           switchuvm(p);
-//           p->state = RUNNING;
-//           if(schedulerLog){
-//             cprintf("Container %d : Scheduling process %d\n",con->containerID,p->pid);
-//           }
-//           swtch(&(c->scheduler), p->context);
-//           switchkvm();
-//           c->proc = 0;
-//         }
-//       }
-//       release(&ptable.lock);
-//     }
-//   }
-// }
+void scheduler(void)
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  c->proc = 0;
+  struct container *con;
+  for(;;){
+    sti();    // Enable interrupts on this processor.
+
+    for(con = ctable.container; con < &ctable.container[NCONT]; con++){
+      if(con->state != CWAITING){
+        continue;
+      }
+      acquire(&ptable.lock);
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->containerID==con->containerID){
+          if(p->state != RUNNABLE)
+            continue;
+          c->proc = p;
+          switchuvm(p);
+          p->state = RUNNING;
+          if(schedulerLog){
+            cprintf("Container %d : Scheduling process %d\n",con->containerID,p->pid);
+          }
+          swtch(&(c->scheduler), p->context);
+          switchkvm();
+          c->proc = 0;
+        }
+      }
+      release(&ptable.lock);
+    }
+  }
+}
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores

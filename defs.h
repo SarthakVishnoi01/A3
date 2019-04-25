@@ -126,6 +126,7 @@ void            exit(void);
 int             fork(void);
 int             growproc(int);
 int             kill(int);
+int 			gtcid();
 struct cpu*     mycpu(void);
 struct proc*    myproc();
 void            pinit(void);

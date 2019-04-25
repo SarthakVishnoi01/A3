@@ -113,33 +113,4 @@
 //   }
 // }
 
-// void container_malloc(int numBytes, int pid){
-//   // Generate a GVA for this container
-//   struct container *c;
-//   int nextFree=0;
-//   int nextGVA;
-//   acquire(&ctable.lock);
-//   for(c=ctable.container; c<&ctable.container[NCONT]; c++){
-//     if(c->presentProc[pid] == 1){
-//       //This is the container in which this process is present;
-//       nextGVA = c->nextGVA;
-//       nextFree = c->pgTable.next;
-//
-//       //Updation
-//       c->nextGVA = c->nextGVA + numBytes;
-//       c->pgTable.next++;
-//
-//       //Setting
-//       c->pgTable.page[nextFree].GVA = nextGVA;
-//       c->pgTable.page[nextFree].HVA = kalloc();
-//       c->pgTable.page[nextFree].pid = pid;
-//
-//       //Print GVA->HVA
-//       if(memoryLog == 1){
-//         cprintf("%d  %p\n", nextGVA, c->pgTable.page[nextFree].HVA);
-//         cprintf("%d\n", pid);
-//       }
-//     }
-//   }
-//   release(&ctable.lock);
-// }
+

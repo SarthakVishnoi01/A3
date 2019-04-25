@@ -34,6 +34,7 @@ void scheduler_log_on(void);
 void scheduler_log_off(void);
 void memory_log_on(void);
 void memory_log_off(void);
+int getcid(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

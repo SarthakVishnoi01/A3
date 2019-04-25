@@ -6,7 +6,6 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
-#include "container_scheduler.h"
 
 //Sys_calls which I will implement
 int sys_create_container(void){
@@ -29,6 +28,7 @@ int sys_destroy_container(void){
   return 0;
 }
 
+
 int sys_join_container(void){
   int id;
   argint(0, &id);
@@ -47,7 +47,7 @@ int sys_leave_container(void){
 int sys_ps(void){
   int procID = myproc()->pid;
   int containerID = myproc()->containerID;
-  cprintf("My containerID is: %d\n", containerID);
+  //cprintf("My containerID is: %d\n", containerID);
   psHelper(procID, containerID);
   return 0;
 }
@@ -58,10 +58,10 @@ int sys_list_containers(void){
 }
 
 int sys_container_malloc(void){
-  // int numBytes;
-  // argint(0, &numBytes);
-  // int pid = myproc()->pid;
-  // container_malloc(numBytes, pid);
+  int numBytes;
+  argint(0, &numBytes);
+  int pid = myproc()->pid;
+  container_malloc(numBytes, pid);
   return 0;
 }
 
@@ -119,6 +119,12 @@ int
 sys_getpid(void)
 {
   return myproc()->pid;
+}
+
+int 
+sys_getcid(void)
+{
+  return gtcid();
 }
 
 int
