@@ -14,12 +14,12 @@ struct container;
 extern int schedulerLog; // 1 if we want output
 extern int memoryLog; // 1 if we want output
 
-// container_manager.c
+// proc.c
 extern int containers[];  //1 means this container is initialised 0 means it isn't
 extern struct ctable ctable;
 extern struct pageTable pageTable;
 void addProcessToContainer(int pid, int containerID);
-void removeProcessFromContainer(int pid, int containerID);
+void removeProcessFromContainer(int pid);
 void listContainersHelper(void);
 void containerInit(void);
 int  createContainer(void);
@@ -119,7 +119,7 @@ int             pipewrite(struct pipe*, char*, int);
 
 //PAGEBREAK: 16
 // proc.c
-extern struct ptable ptable;
+// extern struct ptable ptable;
 extern int scheduler_log;
 int             cpuid(void);
 void            exit(void);

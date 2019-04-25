@@ -32,12 +32,6 @@ int sys_destroy_container(void){
 int sys_join_container(void){
   int id;
   argint(0, &id);
-  //Join this process in container ID
-  if(containers[id] == 0){
-    cprintf("This container doesn't exists");
-    return 0;
-  }
-  myproc()->containerID = id;
   //Add this process in this container
   addProcessToContainer(myproc()->pid, id);
   return 0;
@@ -45,8 +39,8 @@ int sys_join_container(void){
 
 int sys_leave_container(void){
   int pid = myproc()->pid;
-  int containerID = myproc()->containerID;
-  removeProcessFromContainer(pid, containerID);
+  // int containerID = myproc()->containerID;
+  removeProcessFromContainer(pid);
   return 0;
 }
 
@@ -64,10 +58,10 @@ int sys_list_containers(void){
 }
 
 int sys_container_malloc(void){
-  int numBytes;
-  argint(0, &numBytes);
-  int pid = myproc()->pid;
-  container_malloc(numBytes, pid);
+  // int numBytes;
+  // argint(0, &numBytes);
+  // int pid = myproc()->pid;
+  // container_malloc(numBytes, pid);
   return 0;
 }
 
@@ -174,4 +168,3 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
-

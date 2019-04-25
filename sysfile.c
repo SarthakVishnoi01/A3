@@ -76,8 +76,10 @@ sys_read(void)
   if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
     return -1;
   struct inode *tempINODE = f->ip;
-  if(myproc()->containerID != tempINODE->containerID)
+  if(myproc()->containerID != tempINODE->containerID){
+    // cprintf("I end up here with procID:%d\n", myproc()->pid);
     return -1;
+  }
   return fileread(f, p, n);
 }
 
@@ -88,12 +90,22 @@ sys_write(void)
   int n;
   char *p;
 
-  if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
+  if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0){
+    cprintf("Input\n");
+    // cprintf("%d %d\n", myproc()->containerID, tempINODE->containerID);
     return -1;
-  struct inode *tempINODE = f->ip;
-  if(myproc()->containerID != tempINODE->containerID)
-    return -1;
+  }
 
+  struct inode *tempINODE = f->ip;
+
+
+  if(tempINODE->containerID == 0)
+    return filewrite(f, p, n);
+  else if(myproc()->containerID != tempINODE->containerID){
+    // cprintf("%d %d\n", myproc()->containerID, tempINODE->containerID);
+    return -1;
+  }
+  // cprintf("%d %d\n", myproc()->containerID, tempINODE->containerID);
   return filewrite(f, p, n);
 }
 
@@ -311,8 +323,10 @@ sys_open(void)
   struct inode *ip;
   // struct proc *currProc = myproc();
   int cid = myproc()->containerID;
-  if(argstr(0, &path) < 0 || argint(1, &omode) < 0)
+  if(argstr(0, &path) < 0 || argint(1, &omode) < 0){
+    cprintf("Error 6\n");
     return -1;
+  }
 
   // cprintf("Mode is: %d\n", O_CREATE);
   // cprintf("Length of Input file is: %d\n", strlen(path));
@@ -325,25 +339,27 @@ sys_open(void)
   }
 
   char ID = map(cid);
-
   newPath[strlen(path)] = ID;
   newPath[strlen(path)+1] = '\0';
 
-  struct inode* Inode = namei(newPath);
-  if((Inode>0) && (Inode->containerID!= myproc()->containerID)){
-    end_op();
-    return -1;
-  }
+  // struct inode* Inode = namei(newPath);
+  // if((Inode>0) && (Inode->containerID!= myproc()->containerID)){
+  //   end_op();
+  //   cprintf("Error 1\n");
+  //   return -1;
+  // }
 
   if(omode & O_CREATE){
     cprintf("%s\n", newPath);
     ip = create(newPath, T_FILE, 0, 0);
     if(ip == 0){
       end_op();
+      cprintf("Error 2\n");
       return -1;
     }
   } else {
-    if((ip = namei(path)) == 0){
+    if((ip = namei(newPath)) == 0){
+      cprintf("Error 3\n");
       end_op();
       return -1;
     }
@@ -351,6 +367,8 @@ sys_open(void)
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
       end_op();
+      cprintf("Error 4\n");
+
       return -1;
     }
   }
@@ -360,6 +378,7 @@ sys_open(void)
       fileclose(f);
     iunlockput(ip);
     end_op();
+    cprintf("Error 5\n");
     return -1;
   }
   iunlock(ip);
@@ -370,6 +389,7 @@ sys_open(void)
   f->off = 0;
   f->readable = !(omode & O_WRONLY);
   f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
+  // cprintf("File Descriptor is : %d\n", fd);
   return fd;
 }
 

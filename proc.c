@@ -45,6 +45,96 @@ void psHelper(int procID, int containerID){
   release(&ptable.lock);
 }
 
+void containerInit(void){
+  struct container *con;
+  for(int i=0; i<NCONT; i++){
+    con = &ctable.container[i];
+    con->containerID = i;
+    con->state = CUNUSED;
+    con->nextGVA = 0;
+    con->pgTable.next = 0; //Setting Next for this pgTable
+  }
+
+  //Initialise Container 0
+  struct container *firstContainer;
+  firstContainer = &ctable.container[0];
+  firstContainer->state = CWAITING;
+}
+
+int createContainer(void){
+  struct container *c;
+  acquire(&ctable.lock);
+  int id = 0;
+  for(c=ctable.container; c<&ctable.container[NCONT]; c++){
+    id = c->containerID;
+    if(containers[id] == 0 && id!=0){
+      //This is a free container
+      containers[id] = 1;
+      c->state = CWAITING;
+      release(&ctable.lock);
+      return id;
+    }
+  }
+  cprintf("Couldn't create a new container\n");
+  release(&ctable.lock);
+  return -1;
+}
+
+void destroyContainer(int id){
+  struct container *con;
+  acquire(&ctable.lock);
+  con = &ctable.container[id];
+  con->state = CUNUSED;
+  containers[id] = 0;
+  release(&ctable.lock);
+
+  //Killing the processes which are present
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p<&ptable.proc[NPROC]; p++){
+    int pid = p->pid;
+    if(p->containerID == id){
+      //This proc is present in the container, SO KILL IT
+      release(&ptable.lock);
+      kill(pid);
+      acquire(&ptable.lock);
+    }
+  }
+  release(&ptable.lock);
+}
+
+void addProcessToContainer(int pid, int containerID){
+  // struct container *con;
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p=ptable.proc; p<&ptable.proc[NPROC]; p++){
+    if(p->pid == pid){
+      p->containerID = containerID;
+    }
+  }
+  release(&ptable.lock);
+}
+
+void removeProcessFromContainer(int pid){
+  // struct container *con;
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid){
+      p->containerID = 0;
+    }
+  }
+  release(&ptable.lock);
+}
+
+void listContainersHelper(void){
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p=ptable.proc; p<&ptable.proc[NPROC]; p++){
+    cprintf("process %d is present in container %d\n", p->pid, p->containerID);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////////
 void
 pinit(void)
@@ -114,7 +204,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-
+  p->containerID = 0;
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -137,7 +227,6 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
-
   return p;
 }
 
@@ -173,18 +262,14 @@ userinit(void)
   // writes to be visible, and the lock is also needed
   // because the assignment might not be atomic.
 
-  acquire(&ptable.lock);
+  // acquire(&ptable.lock);
   p->state = RUNNABLE;
-  p->containerID = 0;
-  // int id = p->pid;
-  release(&ptable.lock);
-
-  struct container *tempContainer;
-  acquire(&ctable.lock);
-  tempContainer = &ctable.container[0];
-  tempContainer->presentProc[p->pid] =1;
-  release(&ctable.lock);
-
+  // release(&ptable.lock);
+  // acquire(&ctable.lock);
+  // struct container *con;
+  // con = &ctable.container[0];
+  // con->presentProc[p->pid] = 1;
+  // release(&ctable.lock);
   //ctable.container[0].nextprocId = p->pid;
 }
 
@@ -249,14 +334,14 @@ fork(void)
 
   acquire(&ptable.lock);
   np->state = RUNNABLE;
-  np->containerID = 0;
+  // np->containerID = 0;
   release(&ptable.lock);
 
-  struct container *tempContainer;
-  acquire(&ctable.lock);
-  tempContainer = &ctable.container[0];
-  tempContainer->presentProc[np->pid] =1;
-  release(&ctable.lock);
+  // struct container *tempContainer;
+  // acquire(&ctable.lock);
+  // tempContainer = &ctable.container[0];
+  // tempContainer->presentProc[np->pid] =1;
+  // release(&ctable.lock);
 
    //ctable.container[0].nextprocId = pid;
 
@@ -373,85 +458,120 @@ const char* getName(enum containerState s)
    return "None";
 }
 
-int nextproc(struct container* c){
-  for(int i = (c->nextprocId)+1;i<NPROC;i++){
-    if(c->presentProc[i])
-      return i;
-  }
-  return -1;
-}
+// int nextproc(struct container* c){
+//   for(int i = (c->nextprocId)+1;i<NPROC;i++){
+//     if(c->presentProc[i])
+//       return i;
+//   }
+//   return -1;
+// }
 
-/*
-void scheduler(void)
+void
+scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
 
-  struct container *con;
   for(;;){
-    sti();    // Enable interrupts on this processor.
+    // Enable interrupts on this processor.
+    sti();
 
-    for(con = ctable.container; con < &ctable.container[NCONT]; con++){
-
-      if(con->state != CWAITING)continue;
-
-      int ID = con->nextprocId;
-      if(ID<0)continue;
-      p = &ptable.proc[ID];
-
-      con->nextprocId = nextproc(con);
-
-      acquire(&ptable.lock);
-
+    // Loop over process table looking for process to run.
+    acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
+
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+
       swtch(&(c->scheduler), p->context);
       switchkvm();
+
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
       c->proc = 0;
-      release(&ptable.lock);
     }
+    release(&ptable.lock);
+
   }
 }
-*/
+
+// void scheduler(void)
+// {
+//   struct proc *p;
+//   struct cpu *c = mycpu();
+//   c->proc = 0;
+//
+//   struct container *con;
+//   for(;;){
+//     sti();    // Enable interrupts on this processor.
+//
+//     for(con = ctable.container; con < &ctable.container[NCONT]; con++){
+//
+//       if(con->state != CWAITING)continue;
+//
+//       int ID = con->nextprocId;
+//       if(ID<0)continue;
+//       p = &ptable.proc[ID];
+//
+//       con->nextprocId = nextproc(con);
+//
+//       acquire(&ptable.lock);
+//
+//       if(p->state != RUNNABLE)
+//         continue;
+//       c->proc = p;
+//       switchuvm(p);
+//       p->state = RUNNING;
+//       swtch(&(c->scheduler), p->context);
+//       switchkvm();
+//       c->proc = 0;
+//       release(&ptable.lock);
+//     }
+//   }
+// }
 
 
-void scheduler(void)
-{
-  struct proc *p;
-  struct cpu *c = mycpu();
-  c->proc = 0;
-  struct container *con;
-  for(;;){
-    sti();    // Enable interrupts on this processor.
 
-    for(con = ctable.container; con < &ctable.container[NCONT]; con++){
-      if(con->state != CWAITING){
-        continue;
-      }
-      acquire(&ptable.lock);
-      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-        if(con->presentProc[p->pid]){
-          if(p->state != RUNNABLE)
-            continue;
-          c->proc = p;
-          switchuvm(p);
-          p->state = RUNNING;
-          if(schedulerLog){
-            cprintf("Container %d : Scheduling process %d\n",con->containerID,p->pid);
-          }
-          swtch(&(c->scheduler), p->context);
-          switchkvm();
-          c->proc = 0;
-        }
-      }
-      release(&ptable.lock);
-    }
-  }
-}
+// void scheduler(void)
+// {
+//   struct proc *p;
+//   struct cpu *c = mycpu();
+//   c->proc = 0;
+//   struct container *con;
+//   for(;;){
+//     sti();    // Enable interrupts on this processor.
+//
+//     for(con = ctable.container; con < &ctable.container[NCONT]; con++){
+//       if(con->state != CWAITING){
+//         continue;
+//       }
+//       acquire(&ptable.lock);
+//       for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+//         if(con->presentProc[p->pid]){
+//           if(p->state != RUNNABLE)
+//             continue;
+//           c->proc = p;
+//           switchuvm(p);
+//           p->state = RUNNING;
+//           if(schedulerLog){
+//             cprintf("Container %d : Scheduling process %d\n",con->containerID,p->pid);
+//           }
+//           swtch(&(c->scheduler), p->context);
+//           switchkvm();
+//           c->proc = 0;
+//         }
+//       }
+//       release(&ptable.lock);
+//     }
+//   }
+// }
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
@@ -584,6 +704,7 @@ kill(int pid)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
       p->killed = 1;
+      p->containerID = 0;
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING){
         p->state = RUNNABLE;

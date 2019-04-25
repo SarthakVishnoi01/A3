@@ -9,163 +9,137 @@
 #include "proc.h"
 
 //Assume this has access to ctable
-struct ctable {
-  struct spinlock lock;
-  struct container container[NCONT];
-};
+// struct ctable {
+//   struct spinlock lock;
+//   struct container container[NCONT];
+// };
+//
+// struct ptable {
+//   struct spinlock lock;
+//   struct proc proc[NPROC];
+// };
+//
+// struct ctable ctable;
+// struct ptable ptable;
+// struct pgTable pgTable;
 
-struct ptable {
-  struct spinlock lock;
-  struct proc proc[NPROC];
-};
+// void containerInit(void){
+//   struct container *con;
+//   for(int i=0; i<NCONT; i++){
+//     con = &ctable.container[i];
+//     con->containerID = i;
+//     con->state = CUNUSED;
+//     con->nextGVA = 0;
+//     con->pgTable.next = 0; //Setting Next for this pgTable
+//   }
+//
+//   //Initialise Container 0
+//   struct container *firstContainer;
+//   firstContainer = &ctable.container[0];
+//   firstContainer->state = CWAITING;
+// }
+//
+// int createContainer(void){
+//   struct container *c;
+//   acquire(&ctable.lock);
+//   int id = 0;
+//   for(c=ctable.container; c<&ctable.container[NCONT]; c++){
+//     id = c->containerID;
+//     if(containers[id] == 0 && id!=0){
+//       //This is a free container
+//       containers[id] = 1;
+//       c->state = CWAITING;
+//       release(&ctable.lock);
+//       return id;
+//     }
+//   }
+//   cprintf("Couldn't create a new container\n");
+//   release(&ctable.lock);
+//   return -1;
+// }
+//
+// void destroyContainer(int id){
+//   struct container *con;
+//   acquire(&ctable.lock);
+//   con = &ctable.container[id];
+//   con->state = CUNUSED;
+//   containers[id] = 0;
+//   release(&ctable.lock);
+//
+//   //Killing the processes which are present
+//   struct proc *p;
+//   acquire(&ptable.lock);
+//   for(p = ptable.proc; p<&ptable.proc[NPROC]; p++){
+//     int pid = p->pid;
+//     if(p->contaninerID == id){
+//       //This proc is present in the container, SO KILL IT
+//       release(&ptable.lock);
+//       kill(pid);
+//       acquire(&ptable.lock);
+//     }
+//   }
+//   release(&ptable.lock);
+// }
+//
+// void addProcessToContainer(int pid, int containerID){
+//   // struct container *con;
+//   struct proc *p;
+//   acquire(&ptable.lock);
+//   for(p=ptable.proc; p<&ptable.proc[NPROC]; p++){
+//     if(p->pid == pid){
+//       p->containerID = containerID;
+//     }
+//   }
+//   release(&ptable.lock);
+// }
+//
+// void removeProcessFromContainer(int pid){
+//   // struct container *con;
+//   struct proc *p;
+//   acquire(&ptable.lock);
+//   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+//     if(p->pid == pid){
+//       p->containerID = 0;
+//     }
+//   }
+//   release(&ptable.lock);
+// }
+//
+// void listContainersHelper(void){
+//   struct proc *p;
+//   acquire(&ptable.lock);
+//   for(p=ptable.proc; p<&ptable.proc[NPROC]; p++){
+//     cprintf("process %d is present in container %d\n", p->pid, p->containerID);
+//   }
+// }
 
-struct ctable ctable;
-struct ptable ptable;
-struct pgTable pgTable;
-
-void containerInit(void){
-  struct container *con;
-  for(int i=0; i<NCONT; i++){
-    con = &ctable.container[i];
-    con->containerID = i;
-    con->state = CUNUSED;
-    con->nextGVA = 0;
-    con->pgTable.next = 0; //Setting Next for this pgTable
-    for(int j=0; j<NPROC; j++){
-      con->presentProc[j] = 0;
-    }
-  }
-
-  //Initialise Container 0
-  struct container *firstContainer;
-  firstContainer = &ctable.container[0];
-  firstContainer->state = CWAITING;
-
-}
-
-int createContainer(void){
-  struct container *c;
-  acquire(&ctable.lock);
-  int id = 0;
-  for(c=ctable.container; c<&ctable.container[NCONT]; c++){
-    id = c->containerID;
-    if(containers[id] == 0 && id!=0){
-      //This is a free container
-      containers[id] = 1;
-      c->state = CWAITING;
-      release(&ctable.lock);
-      return id;
-    }
-  }
-  cprintf("Couldn't create a new container\n");
-  release(&ctable.lock);
-  return -1;
-}
-
-void destroyContainer(int id){
-  struct container *con;
-  acquire(&ctable.lock);
-  con = &ctable.container[id];
-  release(&ctable.lock);
-  con->state = CUNUSED;
-
-  //Killing the processes which are present
-  struct proc *p;
-  acquire(&ptable.lock);
-  for(p = ptable.proc; p<&ptable.proc[NPROC]; p++){
-    int pid = p->pid;
-    if(con->presentProc[pid] == 1){
-      //This proc is present in the container, SO KILL IT
-      con->presentProc[pid] = 0;
-      release(&ptable.lock);
-      kill(pid);
-      acquire(&ptable.lock);
-    }
-  }
-  release(&ptable.lock);
-}
-
-void addProcessToContainer(int pid, int containerID){
-  struct container *con;
-  acquire(&ctable.lock);
-  for(con = ctable.container; con < &ctable.container[NCONT]; con++){
-    if(con->containerID == containerID){
-      //This is the container ID, add this process
-      con->presentProc[pid] = 1; // Added the process
-      break;
-    }
-  }
-
-  //Deleting this from Container 0
-  struct container *firstContainer;
-  firstContainer = &ctable.container[0];
-  firstContainer->presentProc[pid] = 0;
-  release(&ctable.lock);
-}
-
-void removeProcessFromContainer(int pid, int containerID){
-  struct container *con;
-  acquire(&ctable.lock);
-  for(con = ctable.container; con < &ctable.container[NCONT]; con++){
-    if(con->containerID == containerID){
-      //This is the container ID, remove this process
-      con->presentProc[pid] = 0; // Remove the process
-      break;
-    }
-  }
-
-  //Adding this process to root container
-  struct container *firstContainer;
-  firstContainer = &ctable.container[0];
-  firstContainer->presentProc[pid] = 1;
-  release(&ctable.lock);
-}
-
-void listContainersHelper(void){
-  struct container *c;
-  acquire(&ctable.lock);
-  for(c = ctable.container; c < &ctable.container[NCONT]; c++){
-    if(containers[c->containerID] == 1){
-      //This container is initialised
-      cprintf("The container with id %d is initialised: \n", c->containerID);
-      //Checking the processes in this container
-      for(int j=0; j<NPROC; j++){
-        if(c->presentProc[j] == 1){
-          cprintf("The process with id %d is present in container with id %d: \n", j, c->containerID);
-        }
-      }
-    }
-  }
-  release(&ctable.lock);
-}
-
-void container_malloc(int numBytes, int pid){
-  // Generate a GVA for this container
-  struct container *c;
-  int nextFree=0;
-  int nextGVA;
-  acquire(&ctable.lock);
-  for(c=ctable.container; c<&ctable.container[NCONT]; c++){
-    if(c->presentProc[pid] == 1){
-      //This is the container in which this process is present;
-      nextGVA = c->nextGVA;
-      nextFree = c->pgTable.next;
-
-      //Updation
-      c->nextGVA = c->nextGVA + numBytes;
-      c->pgTable.next++;
-
-      //Setting
-      c->pgTable.page[nextFree].GVA = nextGVA;
-      c->pgTable.page[nextFree].HVA = kalloc();
-      c->pgTable.page[nextFree].pid = pid;
-
-      //Print GVA->HVA
-      if(memoryLog == 1){
-        cprintf("%d  %p\n", nextGVA, c->pgTable.page[nextFree].HVA);
-        cprintf("%d\n", pid);
-      }
-    }
-  }
-  release(&ctable.lock);
-}
+// void container_malloc(int numBytes, int pid){
+//   // Generate a GVA for this container
+//   struct container *c;
+//   int nextFree=0;
+//   int nextGVA;
+//   acquire(&ctable.lock);
+//   for(c=ctable.container; c<&ctable.container[NCONT]; c++){
+//     if(c->presentProc[pid] == 1){
+//       //This is the container in which this process is present;
+//       nextGVA = c->nextGVA;
+//       nextFree = c->pgTable.next;
+//
+//       //Updation
+//       c->nextGVA = c->nextGVA + numBytes;
+//       c->pgTable.next++;
+//
+//       //Setting
+//       c->pgTable.page[nextFree].GVA = nextGVA;
+//       c->pgTable.page[nextFree].HVA = kalloc();
+//       c->pgTable.page[nextFree].pid = pid;
+//
+//       //Print GVA->HVA
+//       if(memoryLog == 1){
+//         cprintf("%d  %p\n", nextGVA, c->pgTable.page[nextFree].HVA);
+//         cprintf("%d\n", pid);
+//       }
+//     }
+//   }
+//   release(&ctable.lock);
+// }
